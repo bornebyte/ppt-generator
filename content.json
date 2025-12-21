@@ -1,7 +1,7 @@
 {
     "meta": {
         "title": "GNU and GNOME",
-        "subtitle": "Free Software, Human Freedom, and the Modern Digital World",
+        "subtitle": "Free Software and Its Impact on the World",
         "author": "Shubham Shah",
         "institution": "Jain University",
         "course": "Computer Science",
@@ -13,42 +13,24 @@
         },
         {
             "type": "content",
-            "title": "Introduction",
-            "subtitle": "Why GNU and GNOME Matter",
+            "title": "GNU Project",
+            "subtitle": "Origins of Software Freedom",
             "blocks": [
                 {
                     "kind": "paragraph",
-                    "text": "Modern computing is dominated by proprietary software, yet much of the digital world quietly runs on free and open-source foundations. GNU and GNOME are two such foundational projects that emphasize freedom, collaboration, and user empowerment."
+                    "text": "The GNU Project was launched to ensure that software users could run, study, modify, and share software freely."
                 },
                 {
-                    "kind": "paragraph",
-                    "text": "Together, they demonstrate how software can be developed ethically while still shaping global technology infrastructure."
-                }
-            ],
-            "notes": "Explain free software philosophy briefly before moving forward."
-        },
-        {
-            "type": "content",
-            "title": "What is GNU?",
-            "subtitle": "A Free Software Movement",
-            "blocks": [
-                {
-                    "kind": "paragraph",
-                    "text": "GNU is a free software operating system initiated in 1983 by Richard Stallman. The goal of the GNU Project was to create a completely free Unix-like operating system."
-                },
-                {
-                    "kind": "bullets",
+                    "kind": "images",
+                    "layout": "row",
                     "items": [
-                        "GNU stands for 'GNU's Not Unix'",
-                        "Emphasizes software freedom over convenience",
                         {
-                            "text": "Four essential freedoms",
-                            "subpoints": [
-                                "Run the program for any purpose",
-                                "Study how the program works",
-                                "Redistribute copies",
-                                "Modify and distribute improvements"
-                            ]
+                            "path": "images/gnu_logo.png",
+                            "caption": "GNU Project Logo"
+                        },
+                        {
+                            "path": "images/richard_stallman.jpg",
+                            "caption": "Richard Stallman"
                         }
                     ]
                 }
@@ -56,153 +38,30 @@
         },
         {
             "type": "content",
-            "title": "GNU Philosophy",
-            "subtitle": "Freedom as a Technical and Moral Value",
+            "title": "GNOME Desktop",
+            "subtitle": "Human-Centered Design",
             "blocks": [
                 {
                     "kind": "paragraph",
-                    "text": "The GNU philosophy treats software freedom as a civil liberty. According to this view, proprietary software creates power imbalance by preventing users from understanding or controlling the tools they depend on."
+                    "text": "GNOME focuses on simplicity, accessibility, and a distraction-free computing experience."
                 },
                 {
-                    "kind": "bullets",
+                    "kind": "images",
+                    "layout": "grid",
                     "items": [
-                        "Opposes digital restrictions management (DRM)",
-                        "Rejects software surveillance",
-                        "Promotes ethical computing"
-                    ]
-                }
-            ]
-        },
-        {
-            "type": "content",
-            "title": "What is GNOME?",
-            "subtitle": "A Desktop for Humans",
-            "blocks": [
-                {
-                    "kind": "paragraph",
-                    "text": "GNOME is a free and open-source desktop environment designed to provide a simple, accessible, and distraction-free user experience. It is widely used in GNU/Linux systems."
-                },
-                {
-                    "kind": "bullets",
-                    "items": [
-                        "Focus on simplicity and usability",
-                        "Designed with accessibility in mind",
                         {
-                            "text": "Used by major platforms",
-                            "subpoints": [
-                                "Fedora Linux",
-                                "Debian",
-                                "Ubuntu (earlier versions)"
-                            ]
+                            "path": "images/gnome_desktop.png"
+                        },
+                        {
+                            "path": "images/gnome_overview.png"
+                        },
+                        {
+                            "path": "images/gnome_settings.png"
+                        },
+                        {
+                            "path": "images/gnome_apps.png"
                         }
                     ]
-                }
-            ]
-        },
-        {
-            "type": "content",
-            "title": "GNOME Design Principles",
-            "subtitle": "Less, But Better",
-            "blocks": [
-                {
-                    "kind": "paragraph",
-                    "text": "GNOME follows a human-centered design philosophy. Instead of offering endless customization, it prioritizes consistency, clarity, and reduced cognitive load."
-                },
-                {
-                    "kind": "bullets",
-                    "items": [
-                        "Minimalist interface",
-                        "Keyboard-driven workflows",
-                        "Strong accessibility standards"
-                    ]
-                }
-            ]
-        },
-        {
-            "type": "content",
-            "title": "GNU + Linux + GNOME",
-            "subtitle": "How the Stack Comes Together",
-            "blocks": [
-                {
-                    "kind": "paragraph",
-                    "text": "In practice, GNU provides system tools, Linux provides the kernel, and GNOME provides the user interface. Together, they form a complete free operating system experience."
-                },
-                {
-                    "kind": "table",
-                    "columns": [
-                        "Layer",
-                        "Component",
-                        "Role"
-                    ],
-                    "rows": [
-                        [
-                            "Kernel",
-                            "Linux",
-                            "Hardware interaction"
-                        ],
-                        [
-                            "System",
-                            "GNU Tools",
-                            "Core utilities and libraries"
-                        ],
-                        [
-                            "Interface",
-                            "GNOME",
-                            "User interaction"
-                        ]
-                    ]
-                }
-            ]
-        },
-        {
-            "type": "content",
-            "title": "Impact on the World",
-            "subtitle": "Beyond Desktop Computers",
-            "blocks": [
-                {
-                    "kind": "bullets",
-                    "items": [
-                        "Used in servers and cloud infrastructure",
-                        "Foundation of open-source education",
-                        {
-                            "text": "Influence on industry",
-                            "subpoints": [
-                                "Cloud providers",
-                                "Research institutions",
-                                "Government systems"
-                            ]
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "type": "content",
-            "title": "Ethical and Social Impact",
-            "subtitle": "Technology Serving Society",
-            "blocks": [
-                {
-                    "kind": "paragraph",
-                    "text": "GNU and GNOME promote a vision where technology respects users rather than exploiting them. This approach influences debates on digital rights, privacy, and software ownership."
-                },
-                {
-                    "kind": "bullets",
-                    "items": [
-                        "Encourages digital self-reliance",
-                        "Reduces dependency on corporations",
-                        "Supports global collaboration"
-                    ]
-                }
-            ]
-        },
-        {
-            "type": "content",
-            "title": "Conclusion",
-            "subtitle": "Shaping a Freer Digital Future",
-            "blocks": [
-                {
-                    "kind": "paragraph",
-                    "text": "GNU and GNOME are not just software projects; they are social movements embedded in technology. Their continued development shapes a world where users retain control, transparency is valued, and collaboration transcends borders."
                 }
             ]
         }

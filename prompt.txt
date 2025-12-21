@@ -4,47 +4,69 @@ Generate a university-level PowerPoint presentation with at least 20 slides.
 
 Rules:
 - Output ONLY valid JSON
-- Follow EXACTLY the structure provided
+- Follow EXACTLY the JSON structure provided
 - No markdown, no explanations, no extra text
-- Use paragraphs where explanation is required
-- Use bullet lists only when listing points
-- Include tables or examples where appropriate
-- Write formal, academic English
+- Use paragraphs for explanations
+- Use bullet lists for key points
+- Include image blocks where visuals are appropriate
+- Assume images are available locally and only provide file paths
+- Write formal academic English
 
 JSON STRUCTURE:
 {
     "meta": {
-        "title": "Grassroot Democracy in India",
-        "subtitle": "Beyond Panchayati Raj",
-        "author": "Shubham Shah",
-        "institution": "Jain University"
+        "title": "Presentation Title",
+        "subtitle": "Optional subtitle",
+        "author": "Your Name",
+        "institution": "University Name",
+        "course": "Course Name",
+        "date": "Year"
     },
     "slides": [
         {
-            "type": "content",
-            "title": "Introduction",
-            "bullets": [
-                "Democracy functions best when citizens participate actively",
-                "Grassroot institutions connect people with governance"
-            ]
+            "type": "title"
         },
         {
             "type": "content",
-            "title": "Panchayati Raj System",
-            "bullets": [
-                "Constitutional framework for local governance",
+            "title": "Slide Title",
+            "subtitle": "Optional slide subtitle",
+            "blocks": [
                 {
-                    "text": "Three-tier structure",
-                    "subpoints": [
-                        "Gram Panchayat",
-                        "Panchayat Samiti",
-                        "Zila Parishad"
+                    "kind": "paragraph",
+                    "text": "Explanatory paragraph text."
+                },
+                {
+                    "kind": "bullets",
+                    "items": [
+                        "Main point",
+                        {
+                            "text": "Point with subpoints",
+                            "subpoints": [
+                                "Subpoint one",
+                                "Subpoint two"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "kind": "images",
+                    "layout": "row",
+                    "items": [
+                        {
+                            "path": "images/image1.png",
+                            "caption": "Optional caption"
+                        },
+                        {
+                            "path": "images/image2.png",
+                            "caption": "Optional caption"
+                        }
                     ]
                 }
-            ]
+            ],
+            "notes": "Speaker notes"
         }
     ]
 }
 
 Topic:
-<TOPIC NAME>
+GNU and GNOME: How Free Software is Shaping the World

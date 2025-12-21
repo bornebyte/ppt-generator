@@ -18,45 +18,62 @@ def add_text(tf, text, level=0, size=18, bold=False):
     for r in p.runs:
         style(r, size, bold)
 
+def render_images(slide, block, top=2.5):
+    items = block["items"]
+    count = len(items)
+
+    if block["layout"] == "row":
+        width = 8 / count
+        for i, img in enumerate(items):
+            slide.shapes.add_picture(
+                img["path"],
+                Inches(0.5 + i * width),
+                Inches(top),
+                width=Inches(width - 0.2)
+            )
+
+    elif block["layout"] == "column":
+        height = 4 / count
+        for i, img in enumerate(items):
+            slide.shapes.add_picture(
+                img["path"],
+                Inches(2),
+                Inches(top + i * height),
+                height=Inches(height - 0.2)
+            )
+
+    elif block["layout"] == "grid":
+        cols = 2
+        rows = (count + 1) // 2
+        w, h = 4, 2
+        for idx, img in enumerate(items):
+            r, c = divmod(idx, cols)
+            slide.shapes.add_picture(
+                img["path"],
+                Inches(0.5 + c * w),
+                Inches(top + r * h),
+                width=Inches(w - 0.3)
+            )
+
 def render_blocks(slide, blocks):
     tf = slide.shapes.placeholders[1].text_frame
     tf.clear()
 
     for block in blocks:
         if block["kind"] == "paragraph":
-            add_text(tf, block["text"], size=18)
+            add_text(tf, block["text"])
 
         elif block["kind"] == "bullets":
             for item in block["items"]:
                 if isinstance(item, str):
-                    add_text(tf, item, level=0)
+                    add_text(tf, item)
                 else:
-                    add_text(tf, item["text"], level=0, bold=True)
+                    add_text(tf, item["text"], bold=True)
                     for sub in item.get("subpoints", []):
                         add_text(tf, sub, level=1)
 
-        elif block["kind"] == "table":
-            rows = len(block["rows"]) + 1
-            cols = len(block["columns"])
-            table = slide.shapes.add_table(
-                rows, cols,
-                Inches(0.5), Inches(2.3),
-                Inches(9), Inches(3.5)
-            ).table
-
-            for c, col in enumerate(block["columns"]):
-                table.cell(0, c).text = col
-
-            for r, row in enumerate(block["rows"], start=1):
-                for c, val in enumerate(row):
-                    table.cell(r, c).text = val
-
-        elif block["kind"] == "image":
-            slide.shapes.add_picture(
-                block["path"],
-                Inches(1), Inches(2.5),
-                width=Inches(6)
-            )
+        elif block["kind"] == "images":
+            render_images(slide, block)
 
 # ----------------------------
 # Load JSON
@@ -67,27 +84,27 @@ with open("content.json", "r", encoding="utf-8") as f:
 prs = Presentation()
 
 # Title slide
-title_slide = prs.slides.add_slide(prs.slide_layouts[0])
-title_slide.shapes.title.text = data["meta"]["title"]
-title_slide.placeholders[1].text = data["meta"]["subtitle"]
+slide = prs.slides.add_slide(prs.slide_layouts[0])
+slide.shapes.title.text = data["meta"]["title"]
+slide.placeholders[1].text = data["meta"]["subtitle"]
 
 # Content slides
-for slide_data in data["slides"]:
-    if slide_data["type"] == "title":
+for s in data["slides"]:
+    if s["type"] == "title":
         continue
 
     slide = prs.slides.add_slide(prs.slide_layouts[1])
-    slide.shapes.title.text = slide_data["title"]
+    slide.shapes.title.text = s["title"]
 
-    if "subtitle" in slide_data:
-        subtitle = slide.shapes.title.text_frame.add_paragraph()
-        subtitle.text = slide_data["subtitle"]
-        subtitle.level = 1
+    if "subtitle" in s:
+        p = slide.shapes.title.text_frame.add_paragraph()
+        p.text = s["subtitle"]
+        p.level = 1
 
-    render_blocks(slide, slide_data.get("blocks", []))
+    render_blocks(slide, s.get("blocks", []))
 
-    if "notes" in slide_data:
-        slide.notes_slide.notes_text_frame.text = slide_data["notes"]
+    if "notes" in s:
+        slide.notes_slide.notes_text_frame.text = s["notes"]
 
-prs.save("GNU_GNOME_Presentation.pptx")
-print("✅ PPT generated successfully")
+prs.save("GNU_GNOME_Final.pptx")
+print("✅ Fully automated PPT generated")
