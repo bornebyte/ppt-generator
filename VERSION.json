@@ -1,0 +1,26 @@
+{
+    "version": "1.0.0",
+    "release_date": "2025-12-24",
+    "status": "stable",
+    "description": "Production-ready PowerPoint Generator from JSON",
+    "changelog": {
+        "1.0.0": {
+            "date": "2025-12-24",
+            "changes": [
+                "Initial production release",
+                "Flask web application with responsive UI",
+                "JSON-driven PowerPoint generation",
+                "Support for text, bullets, and images",
+                "Multiple image layouts (row, column, grid)",
+                "One-line installation script",
+                "CLI support for easy launching",
+                "Production server (Gunicorn) support",
+                "Health check endpoint",
+                "Comprehensive documentation",
+                "Security features and input validation",
+                "Environment variable configuration",
+                "Error handling and user feedback"
+            ]
+        }
+    }
+}

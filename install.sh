@@ -1,0 +1,222 @@
+#!/bin/bash
+
+# PPT Generator Installation Script
+# This script installs the PPT Generator application and sets up the CLI
+
+set -e  # Exit on error
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration
+REPO_URL="https://github.com/bornebyte/ppt-generator.git"
+INSTALL_DIR="$HOME/.ppt-generator"
+BIN_DIR="$HOME/.local/bin"
+
+# Functions
+print_info() {
+    echo -e "${BLUE}ℹ${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}✓${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}✗${NC} $1"
+}
+
+check_command() {
+    if command -v $1 &> /dev/null; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Start installation
+echo ""
+echo -e "${GREEN}╔═══════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║   PPT Generator Installation Script   ║${NC}"
+echo -e "${GREEN}╚═══════════════════════════════════════╝${NC}"
+echo ""
+
+# Check prerequisites
+print_info "Checking prerequisites..."
+
+if ! check_command python3; then
+    print_error "Python 3 is not installed. Please install Python 3.8 or higher."
+    exit 1
+fi
+
+PYTHON_VERSION=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2)
+print_success "Python $PYTHON_VERSION found"
+
+if ! check_command git; then
+    print_error "Git is not installed. Please install git."
+    exit 1
+fi
+print_success "Git found"
+
+if ! check_command pip3; then
+    print_error "pip3 is not installed. Please install pip3."
+    exit 1
+fi
+print_success "pip3 found"
+
+# Check if already installed
+if [ -d "$INSTALL_DIR" ]; then
+    print_warning "PPT Generator is already installed at $INSTALL_DIR"
+    read -p "Do you want to reinstall? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Removing existing installation..."
+        rm -rf "$INSTALL_DIR"
+    else
+        print_info "Installation cancelled."
+        exit 0
+    fi
+fi
+
+# Clone repository
+print_info "Cloning PPT Generator repository..."
+git clone "$REPO_URL" "$INSTALL_DIR" --quiet
+print_success "Repository cloned to $INSTALL_DIR"
+
+# Navigate to install directory
+cd "$INSTALL_DIR"
+
+# Create virtual environment
+print_info "Creating virtual environment..."
+python3 -m venv venv
+print_success "Virtual environment created"
+
+# Activate virtual environment and install dependencies
+print_info "Installing dependencies..."
+source venv/bin/activate
+pip install --upgrade pip --quiet
+pip install -r requirements.txt --quiet
+print_success "Dependencies installed"
+
+# Create bin directory if it doesn't exist
+if [ ! -d "$BIN_DIR" ]; then
+    mkdir -p "$BIN_DIR"
+    print_info "Created $BIN_DIR directory"
+fi
+
+# Create CLI script
+print_info "Creating CLI command..."
+cat > "$BIN_DIR/pptgen" << 'EOF'
+#!/bin/bash
+# PPT Generator CLI
+
+INSTALL_DIR="$HOME/.ppt-generator"
+
+# Check if installation exists
+if [ ! -d "$INSTALL_DIR" ]; then
+    echo "Error: PPT Generator is not installed."
+    echo "Run: curl -sSL https://raw.githubusercontent.com/bornebyte/ppt-generator/main/install.sh | bash"
+    exit 1
+fi
+
+cd "$INSTALL_DIR"
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Parse arguments
+PRODUCTION=0
+PORT=5000
+
+while getopts "p:h" opt; do
+    case $opt in
+        p)
+            PRODUCTION=1
+            if [ ! -z "$OPTARG" ] && [ "$OPTARG" != "-"* ]; then
+                PORT=$OPTARG
+            fi
+            ;;
+        h)
+            echo "PPT Generator CLI"
+            echo ""
+            echo "Usage: pptgen [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  -p [port]    Run in production mode with Gunicorn (default port: 5000)"
+            echo "  -h           Show this help message"
+            echo ""
+            echo "Examples:"
+            echo "  pptgen              # Run development server"
+            echo "  pptgen -p           # Run production server on port 5000"
+            echo "  pptgen -p 8000      # Run production server on port 8000"
+            exit 0
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Start the server
+if [ $PRODUCTION -eq 1 ]; then
+    echo "Starting PPT Generator in production mode on port $PORT..."
+    gunicorn -w 4 -b 0.0.0.0:$PORT main:app
+else
+    echo "Starting PPT Generator in development mode..."
+    export FLASK_APP=main.py
+    export FLASK_ENV=development
+    python main.py
+fi
+EOF
+
+chmod +x "$BIN_DIR/pptgen"
+print_success "CLI command created at $BIN_DIR/pptgen"
+
+# Check if BIN_DIR is in PATH
+if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+    print_warning "$BIN_DIR is not in your PATH"
+    
+    # Detect shell
+    SHELL_NAME=$(basename "$SHELL")
+    if [ "$SHELL_NAME" = "bash" ]; then
+        SHELL_RC="$HOME/.bashrc"
+    elif [ "$SHELL_NAME" = "zsh" ]; then
+        SHELL_RC="$HOME/.zshrc"
+    else
+        SHELL_RC="$HOME/.profile"
+    fi
+    
+    print_info "Adding $BIN_DIR to PATH in $SHELL_RC"
+    echo "" >> "$SHELL_RC"
+    echo "# PPT Generator CLI" >> "$SHELL_RC"
+    echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$SHELL_RC"
+    print_success "PATH updated in $SHELL_RC"
+    print_warning "Please restart your terminal or run: source $SHELL_RC"
+fi
+
+# Installation complete
+echo ""
+echo -e "${GREEN}╔═══════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║    Installation completed! 🎉         ║${NC}"
+echo -e "${GREEN}╚═══════════════════════════════════════╝${NC}"
+echo ""
+print_info "PPT Generator has been installed to: $INSTALL_DIR"
+print_info "CLI command available: pptgen"
+echo ""
+print_success "Quick start:"
+echo "  1. Restart your terminal or run: source $SHELL_RC"
+echo "  2. Run: pptgen"
+echo "  3. Open browser: http://localhost:5000"
+echo ""
+print_info "For production mode: pptgen -p"
+print_info "For help: pptgen -h"
+echo ""
