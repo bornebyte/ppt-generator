@@ -275,6 +275,20 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ## 🐛 Troubleshooting
 
+### Installation Timeout/Network Issues
+
+If installation fails with timeout errors:
+
+```bash
+# Manual installation with increased timeout
+cd ~/.ppt-generator  # or your install directory
+source venv/bin/activate
+pip install --timeout 300 -r requirements.txt
+
+# Or try with retry
+pip install --timeout 300 --retries 5 -r requirements.txt
+```
+
 ### "Package not found" Error
 
 If you encounter `Package not found at '.../pptx/templates/default.pptx'`:

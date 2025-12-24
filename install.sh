@@ -102,9 +102,31 @@ print_success "Virtual environment created"
 # Activate virtual environment and install dependencies
 print_info "Installing dependencies..."
 source venv/bin/activate
-pip install --upgrade pip --quiet
-pip install -r requirements.txt --quiet
-print_success "Dependencies installed"
+
+# Try to install with increased timeout and retries
+MAX_RETRIES=3
+RETRY_COUNT=0
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if pip install --upgrade pip --quiet --timeout 300 && \
+       pip install -r requirements.txt --quiet --timeout 300; then
+        print_success "Dependencies installed"
+        break
+    else
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+            print_warning "Installation failed. Retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+            sleep 2
+        else
+            print_error "Failed to install dependencies after $MAX_RETRIES attempts."
+            print_info "This might be due to network issues. Please try:"
+            echo "  cd $INSTALL_DIR"
+            echo "  source venv/bin/activate"
+            echo "  pip install -r requirements.txt --timeout 300"
+            exit 1
+        fi
+    fi
+done
 
 # Create bin directory if it doesn't exist
 if [ ! -d "$BIN_DIR" ]; then
