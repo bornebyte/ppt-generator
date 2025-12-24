@@ -9,6 +9,7 @@ A Flask-based web application that generates PowerPoint presentations from JSON 
 
 ## 📚 Documentation
 
+- **[Platform Guide](PLATFORM_GUIDE.md)** - Detailed Windows/macOS/Linux installation
 - **[Quick Start Guide](QUICKSTART.md)** - Get started in 5 minutes
 - **[Deployment Guide](DEPLOYMENT.md)** - Production deployment instructions
 - **[Contributing Guide](CONTRIBUTING.md)** - How to contribute
@@ -31,31 +32,47 @@ A Flask-based web application that generates PowerPoint presentations from JSON 
 
 ## 🚀 Quick Install
 
-### One-Line Installation (Recommended)
+### One-Line Installation
 
+**Linux / macOS:**
 ```bash
 curl -sSL https://raw.githubusercontent.com/bornebyte/ppt-generator/main/install.sh | bash
+```
+
+**Windows (Command Prompt):**
+```cmd
+curl -o install.bat https://raw.githubusercontent.com/bornebyte/ppt-generator/main/install.bat && install.bat
+```
+
+**Windows (PowerShell):**
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/bornebyte/ppt-generator/main/install.ps1" -OutFile "install.ps1"; powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
 This will:
 - Clone the repository
 - Set up a virtual environment
 - Install all dependencies
-- Create a `pptgen` command for easy access
+- Create a launcher command for easy access
 
 ### After Installation
 
-Run the application from anywhere:
-
+**Linux / macOS:**
 ```bash
 pptgen        # Start the development server
 pptgen -p     # Start with production server (Gunicorn)
 ```
 
-Or navigate to the project directory and use:
+**Windows:**
+```cmd
+pptgen.bat        # Start the development server
+pptgen.bat -p     # Start with production server
+```
 
+Or use the universal Python launcher (all platforms):
 ```bash
-./pptgen      # If installed via script
+python pptgen-launcher.py
+python pptgen-launcher.py -p
 ```
 
 ## 📦 Manual Installation
@@ -64,6 +81,7 @@ Or navigate to the project directory and use:
 
 - Python 3.8 or higher
 - pip (Python package installer)
+- Git
 
 ### Step-by-Step Setup
 
@@ -74,9 +92,23 @@ Or navigate to the project directory and use:
    ```
 
 2. **Create a virtual environment**
+   
+   **Linux / macOS:**
    ```bash
    python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   source venv/bin/activate
+   ```
+   
+   **Windows (Command Prompt):**
+   ```cmd
+   python -m venv venv
+   venv\Scripts\activate.bat
+   ```
+   
+   **Windows (PowerShell):**
+   ```powershell
+   python -m venv venv
+   .\venv\Scripts\Activate.ps1
    ```
 
 3. **Install dependencies**
@@ -86,14 +118,36 @@ Or navigate to the project directory and use:
 
 4. **Run the application**
    
-   Development mode:
+   **Development mode:**
+   
+   *Linux / macOS:*
    ```bash
+   ./pptgen
+   # or
    python main.py
    ```
    
-   Production mode:
+   *Windows:*
+   ```cmd
+   pptgen.bat
+   REM or
+   python main.py
+   ```
+   
+   **Production mode:**
+   
+   *Linux / macOS:*
    ```bash
+   ./pptgen -p
+   # or
    gunicorn -w 4 -b 0.0.0.0:5000 main:app
+   ```
+   
+   *Windows:*
+   ```cmd
+   pptgen.bat -p
+   REM or
+   python -m gunicorn -w 4 -b 0.0.0.0:5000 main:app
    ```
 
 5. **Open your browser**
@@ -290,6 +344,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 This project is open source and available under the [MIT License](LICENSE).
 
 ## 🐛 Troubleshooting
+
+### Platform-Specific Issues
+
+See the [Platform Guide](PLATFORM_GUIDE.md) for detailed platform-specific troubleshooting.
 
 ### Installation Timeout/Network Issues
 

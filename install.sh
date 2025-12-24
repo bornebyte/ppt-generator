@@ -2,8 +2,24 @@
 
 # PPT Generator Installation Script
 # This script installs the PPT Generator application and sets up the CLI
+# Supports: Linux and macOS
 
 set -e  # Exit on error
+
+# Detect OS
+OS="$(uname -s)"
+case "${OS}" in
+    Linux*)     MACHINE=Linux;;
+    Darwin*)    MACHINE=Mac;;
+    *)          MACHINE="UNKNOWN:${OS}"
+esac
+
+if [ "$MACHINE" = "UNKNOWN:${OS}" ]; then
+    echo "Error: Unsupported operating system: ${OS}"
+    echo "This script supports Linux and macOS only."
+    echo "For Windows, please use install.bat or install.ps1"
+    exit 1
+fi
 
 # Colors for output
 RED='\033[0;31m'
