@@ -1,9 +1,210 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1 class="mt-2">PPT Generator</h1>
-<p class="lead">Generate PPT from JSON data</p>
+<style>
+    .section-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid #dee2e6;
+    }
 
+    .student-entry {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+    }
+
+    .student-entry input {
+        flex: 1;
+    }
+
+    .remove-student-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .add-student-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .ai-prompt-section {
+        background: #e7f3ff;
+        border-left: 4px solid #007bff;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+
+    .ai-prompt-section h5 {
+        color: #007bff;
+        margin-bottom: 10px;
+    }
+
+    .ai-prompt-code {
+        background: #2d2d2d;
+        color: #f8f8f2;
+        padding: 15px;
+        border-radius: 4px;
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        margin-top: 10px;
+    }
+
+    .copy-btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        float: right;
+        margin-top: -5px;
+    }
+</style>
+
+<h1 class="mt-2">PPT Generator</h1>
+<p class="lead">Generate professional PowerPoint presentations from JSON data</p>
+
+<!-- AI Prompt Helper Section -->
+<div class="ai-prompt-section">
+    <h5>📝 How to Get JSON from AI</h5>
+    <p>Copy this prompt and paste it into ChatGPT, Claude, or any AI assistant to generate JSON for your presentation:
+    </p>
+    <button class="copy-btn" onclick="copyPrompt()">Copy Prompt</button>
+    <div class="ai-prompt-code" id="aiPrompt">Create a PowerPoint presentation JSON for a topic about "[YOUR TOPIC]".
+
+        Follow this exact JSON structure:
+
+        {
+        "meta": {
+        "title": "[Your Presentation Title]",
+        "subtitle": "[Your Subtitle]"
+        },
+        "slides": [
+        {
+        "type": "title"
+        },
+        {
+        "type": "content",
+        "title": "[Slide Title]",
+        "blocks": [
+        {
+        "kind": "paragraph",
+        "text": "[Your paragraph text]"
+        },
+        {
+        "kind": "bullets",
+        "items": [
+        "Bullet point 1",
+        "Bullet point 2",
+        {
+        "text": "Bullet with sub-points",
+        "subpoints": ["Sub-point 1", "Sub-point 2"]
+        }
+        ]
+        }
+        ]
+        }
+        ]
+        }
+
+        Make it comprehensive with 8-10 slides covering all important aspects.</div>
+</div>
+
+<!-- Jain University Section -->
+<div class="section-card">
+    <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="jainToggle" onchange="toggleJainSection()">
+        <label class="form-check-label" for="jainToggle">
+            <strong>Create for JAIN University</strong>
+        </label>
+    </div>
+
+    <div id="jainSection" class="hidden">
+        <div class="mb-3">
+            <label class="form-label"><strong>Presentation Title:</strong></label>
+            <input type="text" class="form-control" id="jainTitle" placeholder="Enter presentation title">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label"><strong>Type:</strong></label>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="jainType" id="singleStudent" value="single"
+                    onchange="toggleStudentType()" checked>
+                <label class="form-check-label" for="singleStudent">
+                    Single Student
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="jainType" id="groupStudents" value="group"
+                    onchange="toggleStudentType()">
+                <label class="form-check-label" for="groupStudents">
+                    Group Project
+                </label>
+            </div>
+        </div>
+
+        <!-- Single Student Section -->
+        <div id="singleSection">
+            <div class="mb-3">
+                <label class="form-label">Student Name:</label>
+                <input type="text" class="form-control" id="studentName" placeholder="Enter student name">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">USN:</label>
+                <input type="text" class="form-control" id="studentUSN" placeholder="Enter USN">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Course:</label>
+                <input type="text" class="form-control" id="studentCourse" placeholder="e.g., BCA, MCA, B.Tech">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Semester:</label>
+                <input type="text" class="form-control" id="studentSemester" placeholder="e.g., 5th Semester">
+            </div>
+        </div>
+
+        <!-- Group Section -->
+        <div id="groupSection" class="hidden">
+            <label class="form-label"><strong>Students:</strong></label>
+            <div id="studentsContainer">
+                <div class="student-entry">
+                    <input type="text" class="form-control student-name" placeholder="Student Name">
+                    <input type="text" class="form-control student-usn" placeholder="USN">
+                    <button class="remove-student-btn" onclick="removeStudent(this)">Remove</button>
+                </div>
+            </div>
+            <button class="add-student-btn" onclick="addStudent()">+ Add Another Student</button>
+        </div>
+
+        <!-- Professor Section -->
+        <div class="mb-3 mt-3">
+            <label class="form-label">Submitted To (Professor):</label>
+            <input type="text" class="form-control" id="professorName" placeholder="Enter professor name">
+        </div>
+    </div>
+</div>
+
+<!-- File Name -->
 <div class="form-floating">
     <div class="input-group mb-4">
         <input type="text" class="form-control" placeholder="File Name" id="floatingInput" aria-label="File Name"
@@ -11,16 +212,63 @@
         <span class="input-group-text" id="basic-addon2">.pptx</span>
     </div>
 </div>
+
+<!-- JSON Data -->
 <div class="form-floating mb-8">
-    <textarea class="form-control" style="height: 500px" placeholder="Your ppt JSON data here."
+    <textarea class="form-control" style="height: 400px" placeholder="Paste your JSON data here"
         id="floatingTextarea"></textarea>
-    <label for="floatingTextarea">JSON Data</label>
+    <label for="floatingTextarea">JSON Data (from AI or manual)</label>
     <button type="button" class="btn btn-dark w-100 mt-3 mb-4" id="generateButton" onclick="generatePpt()">
         Generate PPT
     </button>
 </div>
 
 <script>
+    function copyPrompt() {
+        const promptText = document.getElementById('aiPrompt').innerText;
+        navigator.clipboard.writeText(promptText).then(() => {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        });
+    }
+
+    function toggleJainSection() {
+        const jainSection = document.getElementById('jainSection');
+        const isEnabled = document.getElementById('jainToggle').checked;
+        jainSection.classList.toggle('hidden', !isEnabled);
+    }
+
+    function toggleStudentType() {
+        const isSingle = document.getElementById('singleStudent').checked;
+        document.getElementById('singleSection').classList.toggle('hidden', !isSingle);
+        document.getElementById('groupSection').classList.toggle('hidden', isSingle);
+    }
+
+    function addStudent() {
+        const container = document.getElementById('studentsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'student-entry';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control student-name" placeholder="Student Name">
+            <input type="text" class="form-control student-usn" placeholder="USN">
+            <button class="remove-student-btn" onclick="removeStudent(this)">Remove</button>
+        `;
+        container.appendChild(newEntry);
+    }
+
+    function removeStudent(button) {
+        const container = document.getElementById('studentsContainer');
+        if (container.children.length > 1) {
+            button.parentElement.remove();
+        } else {
+            alert('At least one student is required for group projects');
+        }
+    }
+
     function generatePpt() {
         const fileName = document.getElementById('floatingInput').value;
         const jsonData = document.getElementById('floatingTextarea').value;
@@ -40,6 +288,67 @@
             return;
         }
 
+        // Prepare Jain data if enabled
+        let jainData = null;
+        if (document.getElementById('jainToggle').checked) {
+            const jainTitle = document.getElementById('jainTitle').value;
+            const professor = document.getElementById('professorName').value;
+
+            if (!jainTitle || !professor) {
+                alert('Please fill in all Jain University required fields');
+                return;
+            }
+
+            const isSingle = document.getElementById('singleStudent').checked;
+
+            if (isSingle) {
+                const name = document.getElementById('studentName').value;
+                const usn = document.getElementById('studentUSN').value;
+                const course = document.getElementById('studentCourse').value;
+                const semester = document.getElementById('studentSemester').value;
+
+                if (!name || !usn || !course || !semester) {
+                    alert('Please fill in all student details');
+                    return;
+                }
+
+                jainData = {
+                    enabled: true,
+                    type: 'single',
+                    title: jainTitle,
+                    student_name: name,
+                    usn: usn,
+                    course: course,
+                    semester: semester,
+                    professor: professor
+                };
+            } else {
+                // Group
+                const studentEntries = document.querySelectorAll('.student-entry');
+                const students = [];
+
+                for (let entry of studentEntries) {
+                    const name = entry.querySelector('.student-name').value;
+                    const usn = entry.querySelector('.student-usn').value;
+
+                    if (!name || !usn) {
+                        alert('Please fill in all student names and USNs');
+                        return;
+                    }
+
+                    students.push({ name, usn });
+                }
+
+                jainData = {
+                    enabled: true,
+                    type: 'group',
+                    title: jainTitle,
+                    students: students,
+                    professor: professor
+                };
+            }
+        }
+
         // Disable button and show loading state
         button.disabled = true;
         button.textContent = 'Generating...';
@@ -49,7 +358,11 @@
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ file_name: fileName, json_data: jsonData }),
+            body: JSON.stringify({
+                file_name: fileName,
+                json_data: jsonData,
+                jain_data: jainData
+            }),
         })
             .then(response => {
                 if (!response.ok) {

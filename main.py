@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, send_file, jsonify
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
+from pptx.enum.text import PP_ALIGN
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -109,6 +110,137 @@ def render_blocks(slide, blocks):
             render_images(slide, block)
 
 
+def create_jain_title_slide(prs, jain_data):
+    """Create custom Jain University title slide"""
+    # Use blank layout for custom design
+    slide = prs.slides.add_slide(prs.slide_layouts[6])  # Blank layout
+    
+    # Add Jain logo at top center
+    logo_path = 'static/jain.png'
+    if os.path.exists(logo_path):
+        left = Inches(3.5)  # Center position
+        top = Inches(0.5)
+        height = Inches(1.2)
+        slide.shapes.add_picture(logo_path, left, top, height=height)
+    
+    # Add university name
+    uni_box = slide.shapes.add_textbox(Inches(1), Inches(2), Inches(8), Inches(0.5))
+    uni_tf = uni_box.text_frame
+    uni_tf.text = "JAIN (Deemed-to-be University)"
+    uni_p = uni_tf.paragraphs[0]
+    uni_p.alignment = PP_ALIGN.CENTER
+    uni_p.font.size = Pt(24)
+    uni_p.font.bold = True
+    uni_p.font.color.rgb = RGBColor(0, 0, 128)
+    
+    # Add presentation title
+    title_box = slide.shapes.add_textbox(Inches(1), Inches(2.7), Inches(8), Inches(0.8))
+    title_tf = title_box.text_frame
+    title_tf.text = jain_data.get('title', 'Presentation Title')
+    title_tf.word_wrap = True
+    title_p = title_tf.paragraphs[0]
+    title_p.alignment = PP_ALIGN.CENTER
+    title_p.font.size = Pt(32)
+    title_p.font.bold = True
+    title_p.font.color.rgb = RGBColor(0, 0, 0)
+    
+    # Check if single or group
+    if jain_data.get('type') == 'single':
+        # Single student details
+        details_top = 3.8
+        details_box = slide.shapes.add_textbox(Inches(2), Inches(details_top), Inches(6), Inches(2.5))
+        details_tf = details_box.text_frame
+        details_tf.word_wrap = True
+        
+        # Submitted by
+        p = details_tf.paragraphs[0]
+        p.text = "Submitted By:"
+        p.font.size = Pt(16)
+        p.font.bold = True
+        p.alignment = PP_ALIGN.CENTER
+        
+        # Student details
+        student_info = [
+            f"Name: {jain_data.get('student_name', '')}",
+            f"USN: {jain_data.get('usn', '')}",
+            f"Course: {jain_data.get('course', '')}",
+            f"Semester: {jain_data.get('semester', '')}"
+        ]
+        
+        for info in student_info:
+            p = details_tf.add_paragraph()
+            p.text = info
+            p.font.size = Pt(14)
+            p.alignment = PP_ALIGN.CENTER
+            p.space_before = Pt(6)
+        
+        # Submitted to
+        p = details_tf.add_paragraph()
+        p.text = f"\nSubmitted To: {jain_data.get('professor', '')}"
+        p.font.size = Pt(14)
+        p.font.bold = True
+        p.alignment = PP_ALIGN.CENTER
+        p.space_before = Pt(12)
+        
+    elif jain_data.get('type') == 'group':
+        # Group - create table for students
+        students = jain_data.get('students', [])
+        
+        # Add "Submitted By:" text
+        sub_box = slide.shapes.add_textbox(Inches(2), Inches(3.7), Inches(6), Inches(0.4))
+        sub_tf = sub_box.text_frame
+        sub_p = sub_tf.paragraphs[0]
+        sub_p.text = "Submitted By:"
+        sub_p.font.size = Pt(16)
+        sub_p.font.bold = True
+        sub_p.alignment = PP_ALIGN.CENTER
+        
+        # Create table
+        if students:
+            rows = len(students) + 1  # +1 for header
+            cols = 2
+            left = Inches(2.5)
+            top = Inches(4.2)
+            width = Inches(5)
+            height = Inches(0.4 * rows)
+            
+            table = slide.shapes.add_table(rows, cols, left, top, width, height).table
+            
+            # Set column widths
+            table.columns[0].width = Inches(2.5)
+            table.columns[1].width = Inches(2.5)
+            
+            # Header row
+            table.cell(0, 0).text = "Name"
+            table.cell(0, 1).text = "USN"
+            
+            for i, cell in enumerate([table.cell(0, 0), table.cell(0, 1)]):
+                cell.text_frame.paragraphs[0].font.bold = True
+                cell.text_frame.paragraphs[0].font.size = Pt(12)
+                cell.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+                cell.fill.solid()
+                cell.fill.fore_color.rgb = RGBColor(200, 200, 200)
+            
+            # Data rows
+            for idx, student in enumerate(students):
+                table.cell(idx + 1, 0).text = student.get('name', '')
+                table.cell(idx + 1, 1).text = student.get('usn', '')
+                
+                for col in range(2):
+                    cell = table.cell(idx + 1, col)
+                    cell.text_frame.paragraphs[0].font.size = Pt(11)
+                    cell.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+        
+        # Submitted to
+        prof_box = slide.shapes.add_textbox(Inches(2), Inches(6.5), Inches(6), Inches(0.4))
+        prof_tf = prof_box.text_frame
+        prof_p = prof_tf.paragraphs[0]
+        prof_p.text = f"Submitted To: {jain_data.get('professor', '')}"
+        prof_p.font.size = Pt(14)
+        prof_p.font.bold = True
+        prof_p.alignment = PP_ALIGN.CENTER
+
+
 @app.route('/generate_ppt', methods=['POST'])
 def generate_ppt():
     try:
@@ -119,14 +251,17 @@ def generate_ppt():
                 # Parse JSON string from frontend
                 content = json.loads(data['json_data'])
                 file_name = data.get('file_name', 'presentation')
+                jain_data = data.get('jain_data')  # Get Jain university data if provided
             else:
                 content = data
                 file_name = 'presentation'
+                jain_data = None
         else:
             # Fallback to content.json file
             with open('content.json', 'r', encoding='utf-8') as f:
                 content = json.load(f)
             file_name = 'Generated'
+            jain_data = None
         
         # Validate required fields
         if 'meta' not in content or 'slides' not in content:
@@ -135,11 +270,15 @@ def generate_ppt():
         # Create presentation
         prs = Presentation()
 
-        # Title slide
-        slide = prs.slides.add_slide(prs.slide_layouts[0])
-        slide.shapes.title.text = content["meta"].get("title", "Presentation")
-        if len(slide.placeholders) > 1:
-            slide.placeholders[1].text = content["meta"].get("subtitle", "")
+        # Add Jain title slide if requested
+        if jain_data and jain_data.get('enabled'):
+            create_jain_title_slide(prs, jain_data)
+        else:
+            # Standard title slide
+            slide = prs.slides.add_slide(prs.slide_layouts[0])
+            slide.shapes.title.text = content["meta"].get("title", "Presentation")
+            if len(slide.placeholders) > 1:
+                slide.placeholders[1].text = content["meta"].get("subtitle", "")
 
         # Content slides
         for s in content["slides"]:

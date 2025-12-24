@@ -18,6 +18,11 @@ A Flask-based web application that generates PowerPoint presentations from JSON 
 
 - 🎨 **Web Interface**: User-friendly web UI for generating presentations
 - 📝 **JSON-Driven**: Define your entire presentation structure in JSON
+- 🤖 **AI Helper**: Built-in prompt template to get JSON from ChatGPT/Claude
+- 🎓 **Jain University Support**: Custom title slides for academic presentations
+  - Single student presentations with details
+  - Group projects with student tables
+  - Professional university branding
 - 🖼️ **Image Support**: Add images with flexible layouts (row, column, grid)
 - 📋 **Rich Content**: Support for paragraphs, bullet points, and nested sub-points
 - 🎯 **Customizable**: Configure titles, subtitles, and notes for each slide
@@ -101,10 +106,21 @@ Or navigate to the project directory and use:
 ### Using the Web Interface
 
 1. Open the application in your browser
-2. Enter a filename for your presentation
-3. Paste your JSON content (see format below)
-4. Click "Generate PPT"
-5. Download your generated PowerPoint file
+2. **(Optional) Enable Jain University mode** for academic presentations
+   - Toggle "Create for JAIN University"
+   - Enter presentation title
+   - Choose single student or group project
+   - Fill in student details (name, USN, course, semester)
+   - Enter professor name (submitted to)
+3. **Get JSON from AI** (if needed):
+   - Click "Copy Prompt" in the AI Helper section
+   - Paste into ChatGPT, Claude, or any AI assistant
+   - Replace "[YOUR TOPIC]" with your actual topic
+   - Copy the generated JSON
+4. Enter a filename for your presentation
+5. Paste your JSON content
+6. Click "Generate PPT"
+7. Download your generated PowerPoint file
 
 ### JSON Format
 
