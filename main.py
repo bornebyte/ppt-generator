@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 from flask import Flask, render_template, request, send_file, jsonify
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -535,12 +536,16 @@ def generate_ppt():
             if "notes" in s:
                 slide.notes_slide.notes_text_frame.text = s["notes"]
 
-        # Save with secure filename
+        # Save to temp directory (writable on serverless platforms like Vercel)
+        temp_dir = tempfile.gettempdir()
         output_filename = f"{secure_filename(file_name)}.pptx"
-        prs.save(output_filename)
-        print(f"✅ PPT generated: {output_filename}")
+        output_path = os.path.join(temp_dir, output_filename)
         
-        return send_file(output_filename, 
+        prs.save(output_path)
+        print(f"✅ PPT generated: {output_path}")
+        
+        # Send file and let Flask clean up after response
+        return send_file(output_path, 
                         as_attachment=True, 
                         download_name=output_filename,
                         mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation')
