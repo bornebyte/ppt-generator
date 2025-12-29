@@ -1,0 +1,343 @@
+{
+    "meta": {
+        "title": "Enhanced PPT Features Demo",
+        "subtitle": "Showcasing Rich Formatting Capabilities"
+    },
+    "slides": [
+        {
+            "type": "title"
+        },
+        {
+            "type": "content",
+            "title": "Text Formatting Examples",
+            "blocks": [
+                {
+                    "kind": "heading",
+                    "text": "Different Heading Levels",
+                    "level": 1,
+                    "color": "blue",
+                    "align": "center"
+                },
+                {
+                    "kind": "heading",
+                    "text": "This is a Level 2 Heading",
+                    "level": 2,
+                    "color": "green"
+                },
+                {
+                    "kind": "paragraph",
+                    "text": "This is a regular paragraph with standard formatting. You can control size, color, and style.",
+                    "size": 16
+                },
+                {
+                    "kind": "paragraph",
+                    "text": "This paragraph is bold and colored red for emphasis!",
+                    "size": 18,
+                    "bold": true,
+                    "color": "red"
+                }
+            ]
+        },
+        {
+            "type": "content",
+            "title": "Enhanced Bullet Points",
+            "blocks": [
+                {
+                    "kind": "bullets",
+                    "items": [
+                        "Simple bullet point in default color",
+                        {
+                            "text": "Bold red bullet with sub-points",
+                            "bold": true,
+                            "color": "red",
+                            "subpoints": [
+                                "Regular sub-point",
+                                {
+                                    "text": "Green colored sub-point",
+                                    "color": "green"
+                                }
+                            ]
+                        },
+                        "Another simple point"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "content",
+            "title": "Numbered Lists",
+            "blocks": [
+                {
+                    "kind": "heading",
+                    "text": "Step-by-Step Process",
+                    "level": 2,
+                    "color": "blue"
+                },
+                {
+                    "kind": "numbered_list",
+                    "items": [
+                        "First step in the process",
+                        "Second step with normal text",
+                        {
+                            "text": "Third step highlighted in orange",
+                            "color": "orange"
+                        },
+                        "Fourth and final step"
+                    ],
+                    "start": 1,
+                    "color": "black"
+                }
+            ]
+        },
+        {
+            "type": "content",
+            "title": "Data Tables",
+            "blocks": [
+                {
+                    "kind": "paragraph",
+                    "text": "Tables make data comparison easy and visually appealing:",
+                    "size": 14
+                },
+                {
+                    "kind": "table",
+                    "rows": [
+                        [
+                            "Feature",
+                            "Basic",
+                            "Enhanced"
+                        ],
+                        [
+                            "Bullets",
+                            "✓",
+                            "✓"
+                        ],
+                        [
+                            "Tables",
+                            "✗",
+                            "✓"
+                        ],
+                        [
+                            "Colors",
+                            "✗",
+                            "✓"
+                        ],
+                        [
+                            "Text Boxes",
+                            "✗",
+                            "✓"
+                        ]
+                    ],
+                    "header": true,
+                    "header_color": [
+                        68,
+                        114,
+                        196
+                    ],
+                    "header_text_color": "white",
+                    "font_size": 12,
+                    "left": 1.5,
+                    "top": 2.5,
+                    "width": 7,
+                    "height": 2.5
+                }
+            ]
+        },
+        {
+            "type": "content",
+            "title": "Custom Text Boxes",
+            "blocks": [
+                {
+                    "kind": "paragraph",
+                    "text": "Text boxes allow custom positioning and styling:",
+                    "size": 14
+                },
+                {
+                    "kind": "text_box",
+                    "text": "⚠️ Important: This is a highlighted warning box!",
+                    "left": 1.5,
+                    "top": 2.5,
+                    "width": 7,
+                    "height": 0.7,
+                    "font_size": 16,
+                    "bold": true,
+                    "color": "white",
+                    "bg_color": "#E74C3C",
+                    "align": "center"
+                },
+                {
+                    "kind": "text_box",
+                    "text": "✓ Success: This operation completed successfully",
+                    "left": 1.5,
+                    "top": 3.5,
+                    "width": 7,
+                    "height": 0.7,
+                    "font_size": 16,
+                    "bold": true,
+                    "color": "white",
+                    "bg_color": "#27AE60",
+                    "align": "center"
+                },
+                {
+                    "kind": "text_box",
+                    "text": "ℹ️ Info: Here's some useful information",
+                    "left": 1.5,
+                    "top": 4.5,
+                    "width": 7,
+                    "height": 0.7,
+                    "font_size": 16,
+                    "bold": true,
+                    "color": "white",
+                    "bg_color": "#3498DB",
+                    "align": "center"
+                }
+            ]
+        },
+        {
+            "type": "content",
+            "title": "Mixed Content Example",
+            "blocks": [
+                {
+                    "kind": "heading",
+                    "text": "Combining Multiple Elements",
+                    "level": 1,
+                    "color": "purple",
+                    "align": "center"
+                },
+                {
+                    "kind": "paragraph",
+                    "text": "You can mix different block types on the same slide for maximum impact:",
+                    "size": 14
+                },
+                {
+                    "kind": "bullets",
+                    "items": [
+                        "Headings for structure",
+                        "Paragraphs for explanation",
+                        "Tables for data",
+                        "Text boxes for emphasis"
+                    ],
+                    "color": "blue"
+                },
+                {
+                    "kind": "text_box",
+                    "text": "💡 Pro Tip: Use colors strategically to guide attention",
+                    "left": 2,
+                    "top": 5,
+                    "width": 6,
+                    "height": 0.6,
+                    "font_size": 14,
+                    "bold": true,
+                    "color": "black",
+                    "bg_color": "#FFF59D",
+                    "align": "center"
+                }
+            ]
+        },
+        {
+            "type": "content",
+            "title": "Color Palette Examples",
+            "blocks": [
+                {
+                    "kind": "heading",
+                    "text": "Available Named Colors",
+                    "level": 2,
+                    "color": "black"
+                },
+                {
+                    "kind": "bullets",
+                    "items": [
+                        {
+                            "text": "Red - for warnings or important items",
+                            "color": "red"
+                        },
+                        {
+                            "text": "Blue - for informational content",
+                            "color": "blue"
+                        },
+                        {
+                            "text": "Green - for success or positive items",
+                            "color": "green"
+                        },
+                        {
+                            "text": "Orange - for highlights",
+                            "color": "orange"
+                        },
+                        {
+                            "text": "Purple - for special emphasis",
+                            "color": "purple"
+                        }
+                    ]
+                },
+                {
+                    "kind": "paragraph",
+                    "text": "You can also use hex codes like #FF5733 or RGB arrays [255, 87, 51]",
+                    "size": 14,
+                    "italic": true
+                }
+            ]
+        },
+        {
+            "type": "content",
+            "title": "Summary: All Available Features",
+            "blocks": [
+                {
+                    "kind": "table",
+                    "rows": [
+                        [
+                            "Block Type",
+                            "Use Case",
+                            "Key Features"
+                        ],
+                        [
+                            "Heading",
+                            "Section titles",
+                            "3 levels, colors, alignment"
+                        ],
+                        [
+                            "Paragraph",
+                            "Detailed text",
+                            "Size, color, bold, italic"
+                        ],
+                        [
+                            "Bullets",
+                            "Key points",
+                            "Nested, colored, styled"
+                        ],
+                        [
+                            "Numbered List",
+                            "Sequential steps",
+                            "Custom start, colors"
+                        ],
+                        [
+                            "Table",
+                            "Data comparison",
+                            "Headers, colors, sizing"
+                        ],
+                        [
+                            "Text Box",
+                            "Highlights",
+                            "Position, background, style"
+                        ],
+                        [
+                            "Images",
+                            "Visuals",
+                            "Row/column/grid layouts"
+                        ]
+                    ],
+                    "header": true,
+                    "header_color": [
+                        68,
+                        114,
+                        196
+                    ],
+                    "header_text_color": "white",
+                    "font_size": 10,
+                    "left": 0.5,
+                    "top": 2,
+                    "width": 9,
+                    "height": 4
+                }
+            ]
+        }
+    ]
+}

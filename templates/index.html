@@ -79,6 +79,17 @@
         float: right;
         margin-top: -5px;
     }
+
+    .copy-btn:hover {
+        background: #0056b3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .social-links a:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+    }
 </style>
 
 <h1 class="mt-2">PPT Generator</h1>
@@ -86,60 +97,64 @@
 
 <!-- AI Prompt Helper Section -->
 <div class="ai-prompt-section">
-    <h5>📝 How to Get JSON from AI</h5>
-    <p>Copy this prompt and paste it into ChatGPT, Claude, or any AI assistant to generate JSON for your presentation:
-    </p>
-    <button class="copy-btn" onclick="copyPrompt()">Copy Prompt</button>
-    <div class="ai-prompt-code" id="aiPrompt">Create a PowerPoint presentation JSON for a topic about "[YOUR TOPIC]".
+    <h5>📝 Generate AI Prompt for Your Presentation</h5>
+    <p>Enter your topic and number of slides, then copy the generated prompt to paste into ChatGPT, Claude, or any AI
+        assistant:</p>
 
-        Follow this exact JSON structure:
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <input type="text" class="form-control" id="topicInput" placeholder="Enter your presentation topic"
+                value="Artificial Intelligence">
+        </div>
+        <div class="col-md-4">
+            <input type="number" class="form-control" id="pagesInput" placeholder="Number of slides" value="10" min="5"
+                max="50">
+        </div>
+    </div>
+    <div class="ai-prompt-code" id="aiPrompt">Create a PowerPoint presentation JSON for a topic about "Artificial
+        Intelligence".
+
+        Follow this exact JSON structure with rich formatting support:
 
         {
-        "meta": {
-        "title": "[Your Presentation Title]",
-        "subtitle": "[Your Subtitle]"
-        },
+        "meta": {"title": "Title", "subtitle": "Subtitle"},
         "slides": [
-        {
-        "type": "title"
-        },
+        {"type": "title"},
         {
         "type": "content",
-        "title": "[Slide Title]",
+        "title": "Slide Title",
         "blocks": [
-        {
-        "kind": "paragraph",
-        "text": "[Your paragraph text]"
-        },
-        {
-        "kind": "bullets",
-        "items": [
-        "Bullet point 1",
-        "Bullet point 2",
-        {
-        "text": "Bullet with sub-points",
-        "subpoints": ["Sub-point 1", "Sub-point 2"]
-        }
-        ]
-        }
+        {"kind": "heading", "text": "Main Heading", "level": 1, "color": "blue"},
+        {"kind": "paragraph", "text": "Paragraph text", "size": 16},
+        {"kind": "bullets", "items": ["Bullet 1", {"text": "Styled bullet", "bold": true, "color": "red", "subpoints":
+        ["Sub"]}]},
+        {"kind": "table", "rows": [["Header 1", "Header 2"], ["Data 1", "Data 2"]], "header": true}
         ]
         }
         ]
         }
 
-        Make it comprehensive with 8-10 slides covering all important aspects.</div>
+        Supported blocks: heading, paragraph, bullets, numbered_list, table, text_box, images.
+        All optional except "kind". Use colors and formatting for visual appeal.
+
+        Make it comprehensive with 10 slides covering all important aspects.</div>
 </div>
+<button class="copy-btn" onclick="generateAndCopyPrompt()">Generate & Copy Prompt</button>
 
-<!-- Jain University Section -->
+<!-- College/University Section -->
 <div class="section-card">
     <div class="form-check form-switch mb-3">
         <input class="form-check-input" type="checkbox" id="jainToggle" onchange="toggleJainSection()">
         <label class="form-check-label" for="jainToggle">
-            <strong>Create for JAIN University</strong>
+            <strong>Create for Your College/University</strong>
         </label>
     </div>
 
     <div id="jainSection" class="hidden">
+        <div class="mb-3">
+            <label class="form-label"><strong>College/University Name:</strong></label>
+            <input type="text" class="form-control" id="collegeName" placeholder="Enter your college/university name">
+        </div>
         <div class="mb-3">
             <label class="form-label"><strong>Presentation Title:</strong></label>
             <input type="text" class="form-control" id="jainTitle" placeholder="Enter presentation title">
@@ -223,13 +238,173 @@
     </button>
 </div>
 
+<!-- Creator Information Footer -->
+<div class="creator-section"
+    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 30px; margin: 40px 0; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+    <div class="row align-items-center">
+        <div class="col-md-3 text-center">
+            <img src="{{ url_for('static', filename='shubham.jpg') }}" alt="Shubham Shah"
+                style="width: 150px; height: 150px; border-radius: 50%; border: 5px solid white; object-fit: cover; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+        </div>
+        <div class="col-md-9">
+            <h3 style="font-weight: 700; margin-bottom: 15px;">👨‍💻 Created by Shubham Shah</h3>
+            <p style="font-size: 16px; margin-bottom: 20px; opacity: 0.95;">
+                This PPT Generator is an open-source project designed to help students and professionals
+                create presentations easily. Feel free to use, modify, and contribute!
+            </p>
+            <div class="social-links" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <a href="https://github.com/bornebyte" target="_blank"
+                    style="background: white; color: #667eea; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+                    </svg>
+                    GitHub
+                </a>
+                <a href="https://www.linkedin.com/in/bornebyte/" target="_blank"
+                    style="background: white; color: #667eea; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                            d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z" />
+                    </svg>
+                    LinkedIn
+                </a>
+                <a href="mailto:shahshubham1888@gmail.com"
+                    style="background: white; color: #667eea; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                            d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z" />
+                    </svg>
+                    Email
+                </a>
+            </div>
+            <p style="margin-top: 20px; font-size: 14px; opacity: 0.9;">
+                ⭐ Star the project on GitHub | 🐛 Report issues | 🤝 Contribute to make it better!
+            </p>
+        </div>
+    </div>
+</div>
+
 <script>
-    function copyPrompt() {
-        const promptText = document.getElementById('aiPrompt').innerText;
-        navigator.clipboard.writeText(promptText).then(() => {
-            const btn = event.target;
+    function generateAndCopyPrompt() {
+        const topic = document.getElementById('topicInput').value || 'Your Topic';
+        const pages = document.getElementById('pagesInput').value || '10';
+
+        const prompt = `Create a PowerPoint presentation JSON for a topic about "${topic}".
+
+Follow this exact JSON structure with support for rich formatting:
+
+{
+  "meta": {
+    "title": "[Your Presentation Title]",
+    "subtitle": "[Your Subtitle]"
+  },
+  "slides": [
+    {
+      "type": "title"
+    },
+    {
+      "type": "content",
+      "title": "[Slide Title]",
+      "blocks": [
+        {
+          "kind": "heading",
+          "text": "Main Heading",
+          "level": 1,
+          "color": "blue",
+          "align": "center"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Detailed paragraph with explanation",
+          "size": 16,
+          "color": "black",
+          "bold": false,
+          "italic": false,
+          "align": "left"
+        },
+        {
+          "kind": "bullets",
+          "items": [
+            "Simple bullet point",
+            {
+              "text": "Styled bullet (bold with color)",
+              "bold": true,
+              "color": "red",
+              "subpoints": [
+                "Sub-point 1",
+                {"text": "Colored sub-point", "color": "green"}
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "numbered_list",
+          "items": ["First item", "Second item", "Third item"],
+          "start": 1,
+          "color": "blue"
+        },
+        {
+          "kind": "table",
+          "rows": [
+            ["Header 1", "Header 2", "Header 3"],
+            ["Data 1", "Data 2", "Data 3"],
+            ["Data 4", "Data 5", "Data 6"]
+          ],
+          "header": true,
+          "header_color": [68, 114, 196],
+          "font_size": 11,
+          "left": 1,
+          "top": 3,
+          "width": 8,
+          "height": 2
+        },
+        {
+          "kind": "text_box",
+          "text": "Custom positioned text box with styling",
+          "left": 2,
+          "top": 5,
+          "width": 5,
+          "height": 0.8,
+          "font_size": 14,
+          "bold": true,
+          "color": "white",
+          "bg_color": "#4472C4",
+          "align": "center"
+        },
+        {
+          "kind": "images",
+          "layout": "row",
+          "items": [
+            {"path": "image1.png"},
+            {"path": "image2.png"}
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+IMPORTANT NOTES:
+1. All block properties are OPTIONAL except "kind" and required fields
+2. Supported block kinds: heading, paragraph, bullets, numbered_list, table, text_box, images
+3. Colors can be: named ("red", "blue"), hex ("#FF0000"), or RGB array [255, 0, 0]
+4. Align options: "left", "center", "right", "justify"
+5. Heading levels: 1 (large), 2 (medium), 3 (small)
+6. Tables and text_boxes can have custom positioning (left, top, width, height in inches)
+7. Use various block types for visual variety and better presentation
+
+Make it comprehensive with ${pages} slides covering all important aspects. Use different block types (headings, tables, colored text, etc.) to make it visually appealing.`;
+
+        document.getElementById('aiPrompt').innerText = prompt;
+
+        navigator.clipboard.writeText(prompt).then(() => {
+            const btn = document.querySelector('.copy-btn');
             const originalText = btn.textContent;
-            btn.textContent = 'Copied!';
+            btn.textContent = '✓ Copied!';
             setTimeout(() => {
                 btn.textContent = originalText;
             }, 2000);
@@ -288,14 +463,15 @@
             return;
         }
 
-        // Prepare Jain data if enabled
+        // Prepare college data if enabled
         let jainData = null;
         if (document.getElementById('jainToggle').checked) {
+            const collegeName = document.getElementById('collegeName').value;
             const jainTitle = document.getElementById('jainTitle').value;
             const professor = document.getElementById('professorName').value;
 
-            if (!jainTitle || !professor) {
-                alert('Please fill in all Jain University required fields');
+            if (!collegeName || !jainTitle || !professor) {
+                alert('Please fill in all required fields');
                 return;
             }
 
@@ -315,6 +491,7 @@
                 jainData = {
                     enabled: true,
                     type: 'single',
+                    college_name: collegeName,
                     title: jainTitle,
                     student_name: name,
                     usn: usn,
@@ -342,6 +519,7 @@
                 jainData = {
                     enabled: true,
                     type: 'group',
+                    college_name: collegeName,
                     title: jainTitle,
                     students: students,
                     professor: professor

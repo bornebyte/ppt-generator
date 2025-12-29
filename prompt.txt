@@ -6,13 +6,14 @@ Rules:
 - Output ONLY valid JSON
 - Follow EXACTLY the JSON structure provided
 - No markdown, no explanations, no extra text
-- Use paragraphs for explanations
-- Use bullet lists for key points
+- Use various block types for visual variety (headings, tables, colored text, etc.)
+- All block properties are OPTIONAL except "kind" and required text/data fields
 - Include image blocks where visuals are appropriate
 - Assume images are available locally and only provide file paths
 - Write formal academic English
+- Use colors and formatting to make presentations visually appealing
 
-JSON STRUCTURE:
+COMPREHENSIVE JSON STRUCTURE:
 {
     "meta": {
         "title": "Presentation Title",
@@ -32,41 +33,140 @@ JSON STRUCTURE:
             "subtitle": "Optional slide subtitle",
             "blocks": [
                 {
+                    "kind": "heading",
+                    "text": "Section Heading",
+                    "level": 1,
+                    "color": "blue",
+                    "align": "center"
+                },
+                {
                     "kind": "paragraph",
-                    "text": "Explanatory paragraph text."
+                    "text": "Detailed explanation paragraph",
+                    "size": 16,
+                    "color": "black",
+                    "bold": false,
+                    "italic": false,
+                    "align": "left"
                 },
                 {
                     "kind": "bullets",
                     "items": [
-                        "Main point",
+                        "Simple bullet point",
                         {
-                            "text": "Point with subpoints",
+                            "text": "Styled bullet with emphasis",
+                            "bold": true,
+                            "color": "red",
                             "subpoints": [
-                                "Subpoint one",
-                                "Subpoint two"
+                                "Sub-point text",
+                                {"text": "Colored sub-point", "color": "green"}
                             ]
                         }
-                    ]
+                    ],
+                    "color": "black"
+                },
+                {
+                    "kind": "numbered_list",
+                    "items": [
+                        "First numbered item",
+                        "Second numbered item",
+                        {"text": "Styled item", "color": "blue"}
+                    ],
+                    "start": 1,
+                    "color": "black"
+                },
+                {
+                    "kind": "table",
+                    "rows": [
+                        ["Header 1", "Header 2", "Header 3"],
+                        ["Data 1", "Data 2", "Data 3"],
+                        ["Data 4", "Data 5", "Data 6"]
+                    ],
+                    "header": true,
+                    "header_color": [68, 114, 196],
+                    "header_text_color": "white",
+                    "font_size": 11,
+                    "left": 1,
+                    "top": 3,
+                    "width": 8,
+                    "height": 2,
+                    "col_widths": [2.5, 2.5, 3]
+                },
+                {
+                    "kind": "text_box",
+                    "text": "Highlighted important text in a box",
+                    "left": 2,
+                    "top": 5,
+                    "width": 5,
+                    "height": 0.8,
+                    "font_size": 14,
+                    "bold": true,
+                    "italic": false,
+                    "color": "white",
+                    "bg_color": "#4472C4",
+                    "align": "center"
                 },
                 {
                     "kind": "images",
                     "layout": "row",
                     "items": [
-                        {
-                            "path": "images/image1.png",
-                            "caption": "Optional caption"
-                        },
-                        {
-                            "path": "images/image2.png",
-                            "caption": "Optional caption"
-                        }
+                        {"path": "images/image1.png"},
+                        {"path": "images/image2.png"}
                     ]
                 }
             ],
-            "notes": "Speaker notes"
+            "notes": "Speaker notes for this slide"
         }
     ]
 }
+
+BLOCK TYPES REFERENCE:
+
+1. HEADING:
+   - Required: kind, text
+   - Optional: level (1=large, 2=medium, 3=small), color, align
+
+2. PARAGRAPH:
+   - Required: kind, text
+   - Optional: size, color, bold, italic, align
+
+3. BULLETS:
+   - Required: kind, items (array of strings or objects)
+   - Optional: color (applies to all)
+   - Item options: text, bold, color, subpoints (array)
+
+4. NUMBERED_LIST:
+   - Required: kind, items
+   - Optional: start (number), color
+
+5. TABLE:
+   - Required: kind, rows (2D array)
+   - Optional: header (boolean), header_color, header_text_color, font_size, 
+     left, top, width, height, col_widths
+
+6. TEXT_BOX:
+   - Required: kind, text
+   - Optional: left, top, width, height, font_size, bold, italic, 
+     color, bg_color, align
+
+7. IMAGES:
+   - Required: kind, layout (row/column/grid), items (array with path)
+   - Optional: per image - path (required), caption
+
+COLOR FORMATS:
+- Named: "red", "blue", "green", "yellow", "orange", "purple", "pink", "brown", "gray", "black", "white"
+- Hex: "#FF0000", "#0000FF"
+- RGB Array: [255, 0, 0], [0, 0, 255]
+
+ALIGNMENT OPTIONS:
+- "left", "center", "right", "justify"
+
+BEST PRACTICES:
+- Use headings for section breaks
+- Mix bullet points with paragraphs
+- Add tables for data comparison
+- Use text boxes for key takeaways
+- Apply colors strategically for emphasis
+- Vary content types for visual interest
 
 Topic:
 GNU and GNOME: How Free Software is Shaping the World

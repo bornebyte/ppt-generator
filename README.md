@@ -7,28 +7,46 @@
 
 A Flask-based web application that generates PowerPoint presentations from JSON data. Create professional presentations programmatically with customizable slides, content blocks, images, and formatting.
 
+**Created by Shubham Shah** | [GitHub](https://github.com/bornebyte) | [LinkedIn](https://www.linkedin.com/in/bornebyte/) | [Email](mailto:shahshubham1888@gmail.com)
+
+---
+
 ## 📚 Documentation
 
 - **[Platform Guide](PLATFORM_GUIDE.md)** - Detailed Windows/macOS/Linux installation
 - **[Quick Start Guide](QUICKSTART.md)** - Get started in 5 minutes
+- **[Enhanced Features Guide](FEATURES.md)** - Complete guide to all formatting and styling options
 - **[Deployment Guide](DEPLOYMENT.md)** - Production deployment instructions
 - **[Contributing Guide](CONTRIBUTING.md)** - How to contribute
 - **[Project Summary](PROJECT_SUMMARY.md)** - Complete overview of the project
 
 ## ✨ Features
 
+### Core Features
 - 🎨 **Web Interface**: User-friendly web UI for generating presentations
 - 📝 **JSON-Driven**: Define your entire presentation structure in JSON
-- 🤖 **AI Helper**: Built-in prompt template to get JSON from ChatGPT/Claude
-- 🎓 **Jain University Support**: Custom title slides for academic presentations
+- 🤖 **AI Helper**: Dynamic prompt generator - enter topic and number of slides, get customized prompt for ChatGPT/Claude
+- 🎓 **College/University Support**: Customizable title slides for academic presentations
+  - Works with any college or university
   - Single student presentations with details
   - Group projects with student tables
-  - Professional university branding
-- 🖼️ **Image Support**: Add images with flexible layouts (row, column, grid)
-- 📋 **Rich Content**: Support for paragraphs, bullet points, and nested sub-points
-- 🎯 **Customizable**: Configure titles, subtitles, and notes for each slide
+  - Add your own college logo
 - 🚀 **Production Ready**: Includes Gunicorn for production deployment
 - 🔧 **Easy Setup**: One-command installation script
+- 🌟 **Open Source**: Free to use, modify, and distribute
+
+### Rich Formatting Features (NEW! ⭐)
+- **📋 Headings**: 3 levels with custom colors and alignment
+- **✏️ Styled Paragraphs**: Size, color, bold, italic, alignment options
+- **🔹 Enhanced Bullets**: Colored, styled bullets with nested sub-points
+- **🔢 Numbered Lists**: Sequential lists with custom styling
+- **📊 Tables**: Professional data tables with headers, colors, and custom sizing
+- **📦 Text Boxes**: Positioned boxes with backgrounds for highlights and emphasis
+- **🎨 Colors**: Support for named colors, hex codes, and RGB values
+- **🖼️ Images**: Row, column, and grid layouts
+- **🎯 All Optional**: Every formatting property is optional - use what you need
+
+See the [Enhanced Features Guide](FEATURES.md) for detailed documentation and examples.
 
 ## 🚀 Quick Install
 
@@ -400,12 +418,28 @@ pip install -r requirements.txt
 
 ## 📧 Support
 
-If you have any questions or run into issues, please open an issue on GitHub.
+If you have any questions or run into issues, please open an issue on GitHub or reach out to the creator.
+
+## 👨‍💻 About the Creator
+
+**Shubham Shah** is the creator and maintainer of this project. 
+
+- 🐙 **GitHub**: [@bornebyte](https://github.com/bornebyte)
+- 💼 **LinkedIn**: [Shubham Shah](https://www.linkedin.com/in/bornebyte/)
+- 📧 **Email**: [shahshubham1888@gmail.com](mailto:shahshubham1888@gmail.com)
+
+This project was created to help students and professionals easily generate presentations. Feel free to use it, contribute, or reach out with suggestions!
+
+### Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
 ## 🙏 Acknowledgments
 
 - Built with [python-pptx](https://python-pptx.readthedocs.io/)
 - Flask web framework
+- Originally created for educational purposes
+- Made open-source for everyone to benefit
 - Bootstrap for UI components
 
 ---
