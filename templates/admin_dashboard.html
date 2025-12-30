@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .stats-card h3 {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 0;
+    }
+
+    .stats-card p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 0.9rem;
+    }
+
+    .table-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+    }
+
+    .badge-success-custom {
+        background: #28a745;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+
+    .badge-danger-custom {
+        background: #dc3545;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+
+    .chart-container {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>📊 Analytics Dashboard</h1>
+    <div>
+        <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-danger">Logout</a>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <h3>{{ stats.total_generations }}</h3>
+            <p>Total Generations</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <h3>{{ stats.success_rate }}%</h3>
+            <p>Success Rate</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <h3>{{ stats.total_students }}</h3>
+            <p>Students Tracked</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <h3>{{ stats.avg_slides }}</h3>
+            <p>Avg Slides/PPT</p>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="chart-container">
+            <h4 class="mb-3">📈 Generations Over Time (Last 30 Days)</h4>
+            <canvas id="generationsChart" height="80"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Top Colleges -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="table-card">
+            <h4 class="mb-3">🏫 Top Colleges</h4>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>College Name</th>
+                        <th class="text-end">Generations</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if stats.top_colleges %}
+                    {% for college, count in stats.top_colleges %}
+                    <tr>
+                        <td>{{ college or 'Anonymous' }}</td>
+                        <td class="text-end"><span class="badge bg-primary">{{ count }}</span></td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="2" class="text-center text-muted">No data available</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="table-card">
+            <h4 class="mb-3">📊 Quick Stats</h4>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Successful Generations
+                    <span class="badge-success-custom">{{ stats.successful_generations }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Failed Generations
+                    <span class="badge-danger-custom">{{ stats.failed_generations }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Average Slides per PPT
+                    <span class="badge bg-info text-dark">{{ stats.avg_slides }}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Generations -->
+<div class="table-card">
+    <h4 class="mb-3">🕒 Recent Generations</h4>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Date/Time</th>
+                    <th>Title</th>
+                    <th>College</th>
+                    <th>Type</th>
+                    <th>Slides</th>
+                    <th>Status</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if stats.recent_generations %}
+                {% for gen in stats.recent_generations %}
+                <tr style="cursor: {% if gen.students %}pointer{% else %}default{% endif %};" {% if gen.students %}
+                    onclick="showStudentDetails(
+                        {{ gen.id }},
+                        '{{ gen.title | replace("'", "\\'") }}',
+                        '{{ gen.college_name | replace("'", "\\'") if gen.college_name else '' }}',
+                        '{{ gen.student_type or '' }}',
+                        {{ gen.students_json | tojson | safe }},
+                        '{{ gen.course or '' }}',
+                        '{{ gen.semester or '' }}',
+                        '{{ gen.professor_name or '' }}',
+                        '{{ (gen.timestamp|to_local).strftime('%B %d, %Y at %I:%M %p') }}',
+                        {{ gen.num_slides }},
+                        '{{ gen.status }}',
+                        {{ " %.2f"|format(gen.generation_time) }}, {{ gen.file_size or 0 }} )" {% endif %}>
+                    <td style="font-size: 0.85rem;">
+                        <div>{{ (gen.timestamp|to_local).strftime('%Y-%m-%d') }}</div>
+                        <small class="text-muted">{{ (gen.timestamp|to_local).strftime('%I:%M %p') }}</small>
+                    </td>
+                    <td>
+                        <strong>{{ gen.title[:40] }}{% if gen.title|length > 40 %}...{% endif %}</strong>
+                        {% if gen.students %}
+                        <br><small class="text-muted">
+                            {% for student in gen.students[:2] %}
+                            {{ student.name }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                            {% if gen.students|length > 2 %}
+                            <span class="badge bg-primary" style="font-size: 0.75rem;">+{{ gen.students|length - 2 }}
+                                more</span>
+                            {% endif %}
+                        </small>
+                        {% if gen.students %}
+                        <br><small class="text-primary" style="font-size: 0.75rem;">📋 Click for details</small>
+                        {% endif %} {{ gen.course|tojson|safe }},
+                        {{ gen.semester|tojson|safe }},
+                        {{ gen.professor_name|tojson|safe }},
+                        {{ gen.student_type|tojson|safe }}
+                        )'>
+                        <small>📋 View All Details {% if gen.students %}({{ gen.students|length }} student{{ 's' if
+                            gen.students|length > 1 else '' }}){% endif %}</small>
+                        </button>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.85rem;">{{ gen.college_name or '-' }}</td>
+                    <td>
+                        {% if gen.student_type == 'single' %}
+                        <span class="badge bg-info">Single</span>
+                        {% elif gen.student_type == 'group' %}
+                        <span class="badge bg-warning text-dark">Group</span>
+                        {% else %}
+                        <span class="badge bg-secondary">-</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ gen.num_slides }}</td>
+                    <td>
+                        {% if gen.status == 'success' %}
+                        <span class="badge-success-custom">✓ Success</span>
+                        {% else %}
+                        <span class="badge-danger-custom">✗ Failed</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.85rem;">{{ "%.2f"|format(gen.generation_time) }}s</td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">No generations yet</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Student Details Modal -->
+<div class="modal fade" id="studentModal" tabindex="-1" aria-labelledby="studentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header"
+                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="modal-title" id="studentModalLabel">📚 Generation Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="studentModalBody">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Script -->
+</div>
+</div>
+</div>
+</div>
+
+<!-- Chart Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('generationsChart').getContext('2d');
+
+    const dates = {{ chart_dates | tojson | safe }};
+    const counts = {{ chart_counts | tojson | safe }};
+
+    // Check if we have data
+    if (dates && dates.length > 0) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'PPT Generations',
+                    data: counts,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        // Show message if no data
+        document.getElementById('generationsChart').parentElement.innerHTML =
+            '<div class="alert alert-info">No generation data yet. Create some presentations to see the trend!</div>';
+    }
+
+    // Function to show student details in modal
+    function showStudentDetails(genId, title, college, type, students, course, semester, professor, timestamp, slides, status, time, fileSize) {
+        let html = `
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <h5 style="color: #667eea;">${title}</h5>
+                    <p class="text-muted mb-2"><strong>Generated:</strong> ${timestamp}</p>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><strong>🏫 College:</strong> ${college || 'Not specified'}</p>
+                    <p><strong>📚 Course:</strong> ${course || 'N/A'}</p>
+                    <p><strong>📅 Semester:</strong> ${semester || 'N/A'}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>👨‍🏫 Professor:</strong> ${professor || 'N/A'}</p>
+                    <p><strong>📊 Slides:</strong> ${slides}</p>
+                    <p><strong>⏱️ Generation Time:</strong> ${time}s</p>
+                    ${fileSize ? `<p><strong>📦 File Size:</strong> ${(fileSize / 1024).toFixed(2)} KB</p>` : ''}
+                </div>
+            </div>
+        `;
+
+        if (students && students.length > 0) {
+            html += `
+                <hr>
+                <h6 class="mb-3">👥 Student${students.length > 1 ? 's' : ''} (${type === 'single' ? 'Individual' : 'Group Project'})</h6>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>USN</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            students.forEach((student, idx) => {
+                html += `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>${student.name}</td>
+                        <td>${student.usn || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        document.getElementById('studentModalBody').innerHTML = html;
+        new bootstrap.Modal(document.getElementById('studentModal')).show();
+    }
+
+    // Make function globally accessible
+    window.showStudentDetails = showStudentDetails;
+</script>
+
+{% endblock %}

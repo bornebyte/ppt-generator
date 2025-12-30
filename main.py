@@ -1,20 +1,44 @@
 import json
 import os
 import tempfile
-from flask import Flask, render_template, request, send_file, jsonify
+import time
+from datetime import datetime, date
+from flask import Flask, render_template, request, send_file, jsonify, redirect, url_for
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, PP_PARAGRAPH_ALIGNMENT
 from pptx.enum.dml import MSO_THEME_COLOR
 from werkzeug.utils import secure_filename
+from models import db, Generation, Student, get_analytics_summary
 
 app = Flask(__name__)
 
 # Configuration
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB default
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///pptgen.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Admin credentials (change these!)
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'changeme123')
+
 FONT = "Calibri"
+
+# Initialize database
+db.init_app(app)
+
+# Create tables
+with app.app_context():
+    db.create_all()
+
+# Add Jinja2 filter for timezone conversion
+@app.template_filter('to_local')
+def to_local_filter(utc_time):
+    """Convert UTC time to IST for display"""
+    from models import to_local_time
+    return to_local_time(utc_time)
 
 # Helper function to parse color
 def parse_color(color_spec):
@@ -58,6 +82,67 @@ def health():
         'version': '1.0.0'
     })
 
+
+# Admin Routes
+@app.route('/admin')
+def admin_redirect():
+    """Redirect to admin login"""
+    return redirect(url_for('admin_login'))
+
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """Admin login page"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            from flask import session
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return render_template('admin_login.html', error='Invalid credentials')
+    
+    return render_template('admin_login.html')
+
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    """Admin analytics dashboard"""
+    from flask import session
+    from models import to_local_time
+    
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    # Get analytics data
+    stats = get_analytics_summary()
+    
+    # Convert timestamps to local time and prepare student data for JSON serialization
+    for gen in stats.get('recent_generations', []):
+        if hasattr(gen, 'timestamp') and gen.timestamp:
+            gen.local_timestamp = to_local_time(gen.timestamp)
+        # Convert students to dictionaries for JSON serialization
+        if hasattr(gen, 'students'):
+            gen.students_json = [{'name': s.name, 'usn': s.usn} for s in gen.students]
+    
+    # Prepare chart data
+    chart_dates = [str(d[0]) for d in stats['daily_counts']]
+    chart_counts = [d[1] for d in stats['daily_counts']]
+    
+    return render_template('admin_dashboard.html', 
+                         stats=stats,
+                         chart_dates=chart_dates,
+                         chart_counts=chart_counts)
+
+
+@app.route('/admin/logout')
+def admin_logout():
+    """Logout admin"""
+    from flask import session
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('index'))
 
 
 def style(run, size=18, bold=False, italic=False, color=None, underline=False):
@@ -481,6 +566,9 @@ def create_college_title_slide(prs, college_data):
 
 @app.route('/generate_ppt', methods=['POST'])
 def generate_ppt():
+    start_time = time.time()
+    generation = None
+    
     try:
         # Get JSON data from request or use default content.json
         if request.is_json:
@@ -504,6 +592,56 @@ def generate_ppt():
         # Validate required fields
         if 'meta' not in content or 'slides' not in content:
             return jsonify({'error': 'Invalid JSON structure. Required: meta and slides'}), 400
+        
+        # Analyze content for tracking
+        num_slides = len([s for s in content.get('slides', []) if s.get('type') != 'title'])
+        has_tables = any('table' in str(s.get('blocks', [])).lower() for s in content.get('slides', []))
+        has_images = any('image' in str(s.get('blocks', [])).lower() for s in content.get('slides', []))
+        has_charts = any('chart' in str(s.get('blocks', [])).lower() for s in content.get('slides', []))
+        
+        # Create generation record
+        generation = Generation(
+            file_name=file_name,
+            title=content.get('meta', {}).get('title', 'Untitled'),
+            subtitle=content.get('meta', {}).get('subtitle'),
+            num_slides=num_slides,
+            ip_address=request.headers.get('X-Forwarded-For', request.remote_addr),
+            user_agent=request.headers.get('User-Agent', '')[:500],
+            has_tables=has_tables,
+            has_images=has_images,
+            has_charts=has_charts,
+            status='processing'
+        )
+        
+        # Add college/academic info if provided
+        if jain_data and jain_data.get('enabled'):
+            generation.college_name = jain_data.get('college_name')
+            generation.presentation_title = jain_data.get('title')
+            generation.student_type = jain_data.get('type')
+            generation.course = jain_data.get('course')
+            generation.semester = jain_data.get('semester')
+            generation.professor_name = jain_data.get('professor')
+        
+        db.session.add(generation)
+        db.session.flush()  # Get the generation ID
+        
+        # Add student records
+        if jain_data and jain_data.get('enabled'):
+            if jain_data.get('type') == 'single':
+                student = Student(
+                    generation_id=generation.id,
+                    name=jain_data.get('student_name', ''),
+                    usn=jain_data.get('usn', '')
+                )
+                db.session.add(student)
+            elif jain_data.get('type') == 'group':
+                for student_data in jain_data.get('students', []):
+                    student = Student(
+                        generation_id=generation.id,
+                        name=student_data.get('name', ''),
+                        usn=student_data.get('usn', '')
+                    )
+                    db.session.add(student)
         
         # Create presentation
         prs = Presentation()
@@ -542,7 +680,14 @@ def generate_ppt():
         output_path = os.path.join(temp_dir, output_filename)
         
         prs.save(output_path)
-        print(f"✅ PPT generated: {output_path}")
+        
+        # Update generation record with success info
+        generation.status = 'success'
+        generation.file_size = os.path.getsize(output_path)
+        generation.generation_time = time.time() - start_time
+        db.session.commit()
+        
+        print(f"✅ PPT generated: {output_path} (tracked in DB)")
         
         # Send file and let Flask clean up after response
         return send_file(output_path, 
@@ -550,10 +695,25 @@ def generate_ppt():
                         download_name=output_filename,
                         mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation')
     except json.JSONDecodeError as e:
+        if generation:
+            generation.status = 'failed'
+            generation.error_message = f'Invalid JSON: {str(e)}'
+            generation.generation_time = time.time() - start_time
+            db.session.commit()
         return jsonify({'error': f'Invalid JSON: {str(e)}'}), 400
     except KeyError as e:
+        if generation:
+            generation.status = 'failed'
+            generation.error_message = f'Missing required field: {str(e)}'
+            generation.generation_time = time.time() - start_time
+            db.session.commit()
         return jsonify({'error': f'Missing required field: {str(e)}'}), 400
     except Exception as e:
+        if generation:
+            generation.status = 'failed'
+            generation.error_message = str(e)
+            generation.generation_time = time.time() - start_time
+            db.session.commit()
         print(f"Error generating PPT: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
