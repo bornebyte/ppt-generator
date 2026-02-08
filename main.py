@@ -23,6 +23,52 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-pro
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///pptgen.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# CORS configuration (explicit allowlist)
+ALLOWED_ORIGINS = {
+    "https://notes.shubham-shah.com.np",
+}
+
+def is_allowed_origin(origin):
+    if not origin:
+        return False
+    if origin in ALLOWED_ORIGINS:
+        return True
+    # Allow localhost for local development
+    if origin.startswith("http://localhost:") or origin.startswith("https://localhost:"):
+        return True
+    if origin.startswith("http://127.0.0.1:") or origin.startswith("https://127.0.0.1:"):
+        return True
+    return False
+
+@app.before_request
+def handle_preflight():
+    if request.method != "OPTIONS":
+        return None
+    origin = request.headers.get("Origin")
+    if not is_allowed_origin(origin):
+        return Response(status=403)
+    resp = Response(status=204)
+    resp.headers["Access-Control-Allow-Origin"] = origin
+    resp.headers["Vary"] = "Origin"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    resp.headers["Access-Control-Allow-Headers"] = request.headers.get(
+        "Access-Control-Request-Headers",
+        "Content-Type, Authorization",
+    )
+    resp.headers["Access-Control-Max-Age"] = "86400"
+    return resp
+
+@app.after_request
+def add_cors_headers(response):
+    origin = request.headers.get("Origin")
+    if is_allowed_origin(origin):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    return response
+
 # Admin credentials (change these!)
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'changeme123')
