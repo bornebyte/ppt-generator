@@ -23,6 +23,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Admin credentials (change these!)
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'changeme123')
+ADMIN_API_KEY = os.getenv('ADMIN_API_KEY')
 
 FONT = "Calibri"
 
@@ -143,6 +144,76 @@ def admin_logout():
     from flask import session
     session.pop('admin_logged_in', None)
     return redirect(url_for('index'))
+
+
+def _require_api_key():
+    """Optionally enforce API key if ADMIN_API_KEY is set."""
+    if not ADMIN_API_KEY:
+        return None
+    header_key = request.headers.get('X-API-Key')
+    bearer = request.headers.get('Authorization', '')
+    bearer_key = bearer.replace('Bearer ', '', 1).strip() if bearer.startswith('Bearer ') else None
+    if header_key == ADMIN_API_KEY or bearer_key == ADMIN_API_KEY:
+        return None
+    return jsonify({'error': 'Unauthorized'}), 401
+
+
+def _serialize_generation(gen, include_students=True):
+    return {
+        'id': gen.id,
+        'timestamp': gen.timestamp.isoformat() if gen.timestamp else None,
+        'file_name': gen.file_name,
+        'title': gen.title,
+        'subtitle': gen.subtitle,
+        'num_slides': gen.num_slides,
+        'file_size': gen.file_size,
+        'college_name': gen.college_name,
+        'presentation_title': gen.presentation_title,
+        'student_type': gen.student_type,
+        'course': gen.course,
+        'semester': gen.semester,
+        'professor_name': gen.professor_name,
+        'ip_address': gen.ip_address,
+        'user_agent': gen.user_agent,
+        'generation_time': gen.generation_time,
+        'status': gen.status,
+        'error_message': gen.error_message,
+        'content_summary': gen.content_summary,
+        'has_tables': gen.has_tables,
+        'has_images': gen.has_images,
+        'has_charts': gen.has_charts,
+        'students': (
+            [{'id': s.id, 'name': s.name, 'usn': s.usn} for s in gen.students]
+            if include_students else []
+        )
+    }
+
+
+@app.route('/api/generations', methods=['GET'])
+def api_generations():
+    auth = _require_api_key()
+    if auth:
+        return auth
+    limit = min(int(request.args.get('limit', 50)), 200)
+    offset = max(int(request.args.get('offset', 0)), 0)
+    query = Generation.query.order_by(Generation.timestamp.desc())
+    total = query.count()
+    items = query.offset(offset).limit(limit).all()
+    return jsonify({
+        'total': total,
+        'limit': limit,
+        'offset': offset,
+        'items': [_serialize_generation(g) for g in items]
+    })
+
+
+@app.route('/api/generations/<int:gen_id>', methods=['GET'])
+def api_generation_detail(gen_id):
+    auth = _require_api_key()
+    if auth:
+        return auth
+    gen = Generation.query.get_or_404(gen_id)
+    return jsonify(_serialize_generation(gen))
 
 
 def style(run, size=18, bold=False, italic=False, color=None, underline=False):
