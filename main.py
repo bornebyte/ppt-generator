@@ -1,15 +1,18 @@
+import csv
+import io
 import json
 import os
 import tempfile
 import time
 from datetime import datetime, date
-from flask import Flask, render_template, request, send_file, jsonify, redirect, url_for
+from flask import Flask, render_template, request, send_file, jsonify, redirect, url_for, Response
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, PP_PARAGRAPH_ALIGNMENT
 from pptx.enum.dml import MSO_THEME_COLOR
 from werkzeug.utils import secure_filename
+from sqlalchemy import or_
 from models import db, Generation, Student, get_analytics_summary
 
 app = Flask(__name__)
@@ -202,14 +205,8 @@ def _parse_bool(value):
     return None
 
 
-@app.route('/api/generations', methods=['GET'])
-def api_generations():
-    auth = _require_api_key()
-    if auth:
-        return auth
-    limit = min(int(request.args.get('limit', 50)), 200)
-    offset = max(int(request.args.get('offset', 0)), 0)
-    include_students = _parse_bool(request.args.get('include_students'))
+def _build_generation_query(args):
+    include_students = _parse_bool(args.get('include_students'))
     if include_students is None:
         include_students = True
 
@@ -217,7 +214,7 @@ def api_generations():
 
     # Text filters (case-insensitive partial match)
     def ilike(col, key):
-        val = request.args.get(key)
+        val = args.get(key)
         if val:
             return col.ilike(f"%{val}%")
         return None
@@ -238,10 +235,10 @@ def api_generations():
     ]
 
     # Exact match filters
-    status = request.args.get('status')
+    status = args.get('status')
     if status:
         filters.append(Generation.status == status)
-    student_type = request.args.get('student_type')
+    student_type = args.get('student_type')
     if student_type:
         filters.append(Generation.student_type == student_type)
 
@@ -251,14 +248,14 @@ def api_generations():
         ('has_images', Generation.has_images),
         ('has_charts', Generation.has_charts),
     ]:
-        b = _parse_bool(request.args.get(key))
+        b = _parse_bool(args.get(key))
         if b is not None:
             filters.append(col == b)
 
     # Range filters
     def add_range(col, min_key, max_key, cast=float):
-        min_v = request.args.get(min_key)
-        max_v = request.args.get(max_key)
+        min_v = args.get(min_key)
+        max_v = args.get(max_key)
         if min_v is not None:
             try:
                 filters.append(col >= cast(min_v))
@@ -275,8 +272,8 @@ def api_generations():
     add_range(Generation.generation_time, 'min_time', 'max_time', float)
 
     # Date range (ISO date or datetime)
-    start = request.args.get('start')
-    end = request.args.get('end')
+    start = args.get('start')
+    end = args.get('end')
     if start:
         try:
             filters.append(Generation.timestamp >= datetime.fromisoformat(start))
@@ -289,10 +286,10 @@ def api_generations():
             pass
 
     # Global search across key fields
-    q = request.args.get('q')
+    q = args.get('q')
     if q:
         like = f"%{q}%"
-        filters.append(db.or_(
+        filters.append(or_(
             Generation.file_name.ilike(like),
             Generation.title.ilike(like),
             Generation.subtitle.ilike(like),
@@ -303,8 +300,8 @@ def api_generations():
         ))
 
     # Student filters (join only if needed)
-    student_name = request.args.get('student_name')
-    student_usn = request.args.get('student_usn')
+    student_name = args.get('student_name')
+    student_usn = args.get('student_usn')
     if student_name or student_usn:
         query = query.join(Student)
         if student_name:
@@ -318,8 +315,8 @@ def api_generations():
             query = query.filter(f)
 
     # Sorting
-    sort_by = request.args.get('sort_by', 'timestamp')
-    sort_dir = request.args.get('sort_dir', 'desc').lower()
+    sort_by = args.get('sort_by', 'timestamp')
+    sort_dir = args.get('sort_dir', 'desc').lower()
     sort_map = {
         'timestamp': Generation.timestamp,
         'file_name': Generation.file_name,
@@ -333,6 +330,17 @@ def api_generations():
     sort_col = sort_map.get(sort_by, Generation.timestamp)
     query = query.order_by(sort_col.desc() if sort_dir == 'desc' else sort_col.asc())
 
+    return query, include_students
+
+
+@app.route('/api/generations', methods=['GET'])
+def api_generations():
+    auth = _require_api_key()
+    if auth:
+        return auth
+    limit = min(int(request.args.get('limit', 50)), 200)
+    offset = max(int(request.args.get('offset', 0)), 0)
+    query, include_students = _build_generation_query(request.args)
     total = query.count()
     items = query.offset(offset).limit(limit).all()
     return jsonify({
@@ -350,6 +358,85 @@ def api_generation_detail(gen_id):
         return auth
     gen = Generation.query.get_or_404(gen_id)
     return jsonify(_serialize_generation(gen))
+
+
+@app.route('/api/generations/export', methods=['GET'])
+def api_generations_export():
+    auth = _require_api_key()
+    if auth:
+        return auth
+
+    export_format = request.args.get('format', 'csv').lower()
+    limit = min(int(request.args.get('limit', 5000)), 10000)
+    offset = max(int(request.args.get('offset', 0)), 0)
+
+    query, include_students = _build_generation_query(request.args)
+    items = query.offset(offset).limit(limit).all()
+
+    if export_format == 'json':
+        return jsonify({
+            'count': len(items),
+            'limit': limit,
+            'offset': offset,
+            'items': [_serialize_generation(g, include_students=include_students) for g in items]
+        })
+
+    if export_format != 'csv':
+        return jsonify({'error': 'Invalid format. Use csv or json.'}), 400
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    headers = [
+        'id', 'timestamp', 'file_name', 'title', 'subtitle', 'num_slides', 'file_size',
+        'college_name', 'presentation_title', 'student_type', 'course', 'semester',
+        'professor_name', 'ip_address', 'user_agent', 'generation_time', 'status',
+        'error_message', 'content_summary', 'has_tables', 'has_images', 'has_charts'
+    ]
+    if include_students:
+        headers += ['student_names', 'student_usns']
+    writer.writerow(headers)
+
+    for g in items:
+        row = [
+            g.id,
+            g.timestamp.isoformat() if g.timestamp else '',
+            g.file_name or '',
+            g.title or '',
+            g.subtitle or '',
+            g.num_slides or '',
+            g.file_size or '',
+            g.college_name or '',
+            g.presentation_title or '',
+            g.student_type or '',
+            g.course or '',
+            g.semester or '',
+            g.professor_name or '',
+            g.ip_address or '',
+            g.user_agent or '',
+            g.generation_time or '',
+            g.status or '',
+            g.error_message or '',
+            g.content_summary or '',
+            g.has_tables,
+            g.has_images,
+            g.has_charts,
+        ]
+        if include_students:
+            names = '; '.join([s.name for s in g.students]) if g.students else ''
+            usns = '; '.join([s.usn or '' for s in g.students]) if g.students else ''
+            row += [names, usns]
+        writer.writerow(row)
+
+    csv_data = output.getvalue()
+    output.close()
+
+    filename = f"generations_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        csv_data,
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )
 
 
 def style(run, size=18, bold=False, italic=False, color=None, underline=False):
