@@ -189,6 +189,19 @@ def _serialize_generation(gen, include_students=True):
     }
 
 
+def _parse_bool(value):
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    v = str(value).strip().lower()
+    if v in ('1', 'true', 'yes', 'y', 'on'):
+        return True
+    if v in ('0', 'false', 'no', 'n', 'off'):
+        return False
+    return None
+
+
 @app.route('/api/generations', methods=['GET'])
 def api_generations():
     auth = _require_api_key()
@@ -196,14 +209,137 @@ def api_generations():
         return auth
     limit = min(int(request.args.get('limit', 50)), 200)
     offset = max(int(request.args.get('offset', 0)), 0)
-    query = Generation.query.order_by(Generation.timestamp.desc())
+    include_students = _parse_bool(request.args.get('include_students'))
+    if include_students is None:
+        include_students = True
+
+    query = Generation.query
+
+    # Text filters (case-insensitive partial match)
+    def ilike(col, key):
+        val = request.args.get(key)
+        if val:
+            return col.ilike(f"%{val}%")
+        return None
+
+    filters = [
+        ilike(Generation.file_name, 'file_name'),
+        ilike(Generation.title, 'title'),
+        ilike(Generation.subtitle, 'subtitle'),
+        ilike(Generation.college_name, 'college_name'),
+        ilike(Generation.presentation_title, 'presentation_title'),
+        ilike(Generation.course, 'course'),
+        ilike(Generation.semester, 'semester'),
+        ilike(Generation.professor_name, 'professor_name'),
+        ilike(Generation.ip_address, 'ip'),
+        ilike(Generation.user_agent, 'user_agent'),
+        ilike(Generation.error_message, 'error_message'),
+        ilike(Generation.content_summary, 'content_summary'),
+    ]
+
+    # Exact match filters
+    status = request.args.get('status')
+    if status:
+        filters.append(Generation.status == status)
+    student_type = request.args.get('student_type')
+    if student_type:
+        filters.append(Generation.student_type == student_type)
+
+    # Boolean filters
+    for key, col in [
+        ('has_tables', Generation.has_tables),
+        ('has_images', Generation.has_images),
+        ('has_charts', Generation.has_charts),
+    ]:
+        b = _parse_bool(request.args.get(key))
+        if b is not None:
+            filters.append(col == b)
+
+    # Range filters
+    def add_range(col, min_key, max_key, cast=float):
+        min_v = request.args.get(min_key)
+        max_v = request.args.get(max_key)
+        if min_v is not None:
+            try:
+                filters.append(col >= cast(min_v))
+            except ValueError:
+                pass
+        if max_v is not None:
+            try:
+                filters.append(col <= cast(max_v))
+            except ValueError:
+                pass
+
+    add_range(Generation.num_slides, 'min_slides', 'max_slides', int)
+    add_range(Generation.file_size, 'min_file_size', 'max_file_size', int)
+    add_range(Generation.generation_time, 'min_time', 'max_time', float)
+
+    # Date range (ISO date or datetime)
+    start = request.args.get('start')
+    end = request.args.get('end')
+    if start:
+        try:
+            filters.append(Generation.timestamp >= datetime.fromisoformat(start))
+        except ValueError:
+            pass
+    if end:
+        try:
+            filters.append(Generation.timestamp <= datetime.fromisoformat(end))
+        except ValueError:
+            pass
+
+    # Global search across key fields
+    q = request.args.get('q')
+    if q:
+        like = f"%{q}%"
+        filters.append(db.or_(
+            Generation.file_name.ilike(like),
+            Generation.title.ilike(like),
+            Generation.subtitle.ilike(like),
+            Generation.college_name.ilike(like),
+            Generation.presentation_title.ilike(like),
+            Generation.professor_name.ilike(like),
+            Generation.content_summary.ilike(like),
+        ))
+
+    # Student filters (join only if needed)
+    student_name = request.args.get('student_name')
+    student_usn = request.args.get('student_usn')
+    if student_name or student_usn:
+        query = query.join(Student)
+        if student_name:
+            filters.append(Student.name.ilike(f"%{student_name}%"))
+        if student_usn:
+            filters.append(Student.usn.ilike(f"%{student_usn}%"))
+
+    # Apply filters
+    for f in filters:
+        if f is not None:
+            query = query.filter(f)
+
+    # Sorting
+    sort_by = request.args.get('sort_by', 'timestamp')
+    sort_dir = request.args.get('sort_dir', 'desc').lower()
+    sort_map = {
+        'timestamp': Generation.timestamp,
+        'file_name': Generation.file_name,
+        'title': Generation.title,
+        'num_slides': Generation.num_slides,
+        'file_size': Generation.file_size,
+        'generation_time': Generation.generation_time,
+        'status': Generation.status,
+        'college_name': Generation.college_name,
+    }
+    sort_col = sort_map.get(sort_by, Generation.timestamp)
+    query = query.order_by(sort_col.desc() if sort_dir == 'desc' else sort_col.asc())
+
     total = query.count()
     items = query.offset(offset).limit(limit).all()
     return jsonify({
         'total': total,
         'limit': limit,
         'offset': offset,
-        'items': [_serialize_generation(g) for g in items]
+        'items': [_serialize_generation(g, include_students=include_students) for g in items]
     })
 
 
