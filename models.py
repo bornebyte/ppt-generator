@@ -69,6 +69,30 @@ class Student(db.Model):
         return f'<Student {self.name} ({self.usn})>'
 
 
+class Feedback(db.Model):
+    """Track user feedback"""
+    __tablename__ = 'feedbacks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+    
+    # Feedback content
+    feedback_text = db.Column(db.Text, nullable=False)
+    rating = db.Column(db.Integer)  # Optional 1-5 rating
+    user_email = db.Column(db.String(255))  # Optional contact info
+    
+    # Tech metadata
+    ip_address = db.Column(db.String(50))
+    user_agent = db.Column(db.String(500))
+    
+    # Categorization
+    category = db.Column(db.String(50))  # bug, feature, improvement, praise, other
+    status = db.Column(db.String(20), default='new')  # new, reviewed, resolved, archived
+    
+    def __repr__(self):
+        return f'<Feedback {self.id}: {self.category or "uncategorized"}>'
+
+
 class DailyStats(db.Model):
     """Aggregate daily statistics for quick analytics"""
     __tablename__ = 'daily_stats'

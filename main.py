@@ -13,7 +13,7 @@ from pptx.enum.text import PP_ALIGN, PP_PARAGRAPH_ALIGNMENT
 from pptx.enum.dml import MSO_THEME_COLOR
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_
-from models import db, Generation, Student, get_analytics_summary
+from models import db, Generation, Student, Feedback, get_analytics_summary
 
 app = Flask(__name__)
 
@@ -1056,6 +1056,265 @@ def generate_ppt():
             db.session.commit()
         print(f"Error generating PPT: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+
+# Feedback endpoints
+@app.route('/api/feedback', methods=['POST'])
+def submit_feedback():
+    """Submit user feedback (public endpoint, no auth required)"""
+    try:
+        data = request.get_json()
+        
+        if not data or not data.get('feedback_text'):
+            return jsonify({'error': 'feedback_text is required'}), 400
+        
+        # Validate rating if provided
+        rating = data.get('rating')
+        if rating is not None:
+            try:
+                rating = int(rating)
+                if not (1 <= rating <= 5):
+                    return jsonify({'error': 'rating must be between 1 and 5'}), 400
+            except (ValueError, TypeError):
+                return jsonify({'error': 'rating must be a number'}), 400
+        
+        # Create feedback record
+        feedback = Feedback(
+            feedback_text=data.get('feedback_text'),
+            rating=rating,
+            user_email=data.get('user_email'),
+            category=data.get('category'),  # bug, feature, improvement, praise, other
+            ip_address=request.headers.get('X-Forwarded-For', request.remote_addr),
+            user_agent=request.headers.get('User-Agent', '')[:500]
+        )
+        
+        db.session.add(feedback)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Thank you for your feedback!',
+            'feedback_id': feedback.id
+        }), 201
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving feedback: {str(e)}")
+        return jsonify({'error': 'Failed to save feedback'}), 500
+
+
+def _serialize_feedback(fb):
+    """Serialize feedback object to dict"""
+    return {
+        'id': fb.id,
+        'timestamp': fb.timestamp.isoformat() if fb.timestamp else None,
+        'feedback_text': fb.feedback_text,
+        'rating': fb.rating,
+        'user_email': fb.user_email,
+        'category': fb.category,
+        'status': fb.status,
+        'ip_address': fb.ip_address,
+        'user_agent': fb.user_agent
+    }
+
+
+def _build_feedback_query(args):
+    """Build filtered query for feedback with similar pattern to generations"""
+    query = Feedback.query
+    
+    # Text filters
+    def ilike(col, key):
+        val = args.get(key)
+        if val:
+            return col.ilike(f"%{val}%")
+        return None
+    
+    filters = [
+        ilike(Feedback.feedback_text, 'feedback_text'),
+        ilike(Feedback.user_email, 'user_email'),
+        ilike(Feedback.ip_address, 'ip'),
+        ilike(Feedback.user_agent, 'user_agent'),
+    ]
+    
+    # Exact match filters
+    category = args.get('category')
+    if category:
+        filters.append(Feedback.category == category)
+    
+    status = args.get('status')
+    if status:
+        filters.append(Feedback.status == status)
+    
+    # Rating range filter
+    min_rating = args.get('min_rating')
+    max_rating = args.get('max_rating')
+    if min_rating is not None:
+        try:
+            filters.append(Feedback.rating >= int(min_rating))
+        except ValueError:
+            pass
+    if max_rating is not None:
+        try:
+            filters.append(Feedback.rating <= int(max_rating))
+        except ValueError:
+            pass
+    
+    # Date range filter
+    start = args.get('start')
+    end = args.get('end')
+    if start:
+        try:
+            filters.append(Feedback.timestamp >= datetime.fromisoformat(start))
+        except ValueError:
+            pass
+    if end:
+        try:
+            filters.append(Feedback.timestamp <= datetime.fromisoformat(end))
+        except ValueError:
+            pass
+    
+    # Global search
+    q = args.get('q')
+    if q:
+        like = f"%{q}%"
+        filters.append(or_(
+            Feedback.feedback_text.ilike(like),
+            Feedback.user_email.ilike(like),
+            Feedback.category.ilike(like)
+        ))
+    
+    # Apply filters
+    for f in filters:
+        if f is not None:
+            query = query.filter(f)
+    
+    # Sorting
+    sort_by = args.get('sort_by', 'timestamp')
+    sort_dir = args.get('sort_dir', 'desc').lower()
+    sort_map = {
+        'timestamp': Feedback.timestamp,
+        'rating': Feedback.rating,
+        'category': Feedback.category,
+        'status': Feedback.status
+    }
+    sort_col = sort_map.get(sort_by, Feedback.timestamp)
+    query = query.order_by(sort_col.desc() if sort_dir == 'desc' else sort_col.asc())
+    
+    return query
+
+
+@app.route('/api/feedbacks', methods=['GET'])
+def api_feedbacks():
+    """Get all feedback with filtering options (requires API key)"""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    
+    limit = min(int(request.args.get('limit', 50)), 200)
+    offset = max(int(request.args.get('offset', 0)), 0)
+    
+    query = _build_feedback_query(request.args)
+    total = query.count()
+    items = query.offset(offset).limit(limit).all()
+    
+    return jsonify({
+        'total': total,
+        'limit': limit,
+        'offset': offset,
+        'items': [_serialize_feedback(fb) for fb in items]
+    })
+
+
+@app.route('/api/feedbacks/<int:feedback_id>', methods=['GET'])
+def api_feedback_detail(feedback_id):
+    """Get specific feedback by ID (requires API key)"""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    
+    feedback = Feedback.query.get_or_404(feedback_id)
+    return jsonify(_serialize_feedback(feedback))
+
+
+@app.route('/api/feedbacks/<int:feedback_id>', methods=['PATCH'])
+def api_feedback_update(feedback_id):
+    """Update feedback status/category (requires API key)"""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    
+    feedback = Feedback.query.get_or_404(feedback_id)
+    data = request.get_json()
+    
+    # Only allow updating status and category
+    if 'status' in data:
+        allowed_statuses = ['new', 'reviewed', 'resolved', 'archived']
+        if data['status'] in allowed_statuses:
+            feedback.status = data['status']
+    
+    if 'category' in data:
+        feedback.category = data['category']
+    
+    db.session.commit()
+    return jsonify(_serialize_feedback(feedback))
+
+
+@app.route('/api/feedbacks/export', methods=['GET'])
+def api_feedbacks_export():
+    """Export feedback data as CSV or JSON (requires API key)"""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    
+    export_format = request.args.get('format', 'csv').lower()
+    limit = min(int(request.args.get('limit', 5000)), 10000)
+    offset = max(int(request.args.get('offset', 0)), 0)
+    
+    query = _build_feedback_query(request.args)
+    items = query.offset(offset).limit(limit).all()
+    
+    if export_format == 'json':
+        return jsonify({
+            'count': len(items),
+            'limit': limit,
+            'offset': offset,
+            'items': [_serialize_feedback(fb) for fb in items]
+        })
+    
+    if export_format != 'csv':
+        return jsonify({'error': 'Invalid format. Use csv or json.'}), 400
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    headers = ['id', 'timestamp', 'feedback_text', 'rating', 'user_email', 
+               'category', 'status', 'ip_address', 'user_agent']
+    writer.writerow(headers)
+    
+    for fb in items:
+        row = [
+            fb.id,
+            fb.timestamp.isoformat() if fb.timestamp else '',
+            fb.feedback_text or '',
+            fb.rating or '',
+            fb.user_email or '',
+            fb.category or '',
+            fb.status or '',
+            fb.ip_address or '',
+            fb.user_agent or ''
+        ]
+        writer.writerow(row)
+    
+    csv_data = output.getvalue()
+    output.close()
+    
+    filename = f"feedback_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        csv_data,
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )
+
 
 if __name__ == '__main__':
     # Development server only
